@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Pos.Domain.Exceptions;
 
@@ -30,9 +29,24 @@ public sealed class ProblemDetailsExceptionMiddleware
 
     private static Task WriteProblemDetailsAsync(HttpContext context, Exception ex)
     {
+        if (ex is ValidationException validation)
+        {
+            var errors = validation.Errors.ToDictionary(entry => entry.Key, entry => entry.Value);
+            var problem = new ValidationProblemDetails(errors)
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Validation error",
+                Detail = ex.Message,
+                Instance = context.Request.Path
+            };
+
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/problem+json";
+            return context.Response.WriteAsJsonAsync(problem);
+        }
+
         var (status, title) = ex switch
         {
-            ValidationException => (StatusCodes.Status400BadRequest, "Validation error"),
             UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden"),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found"),
@@ -40,7 +54,7 @@ public sealed class ProblemDetailsExceptionMiddleware
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error")
         };
 
-        var problem = new ProblemDetails
+        var genericProblem = new ProblemDetails
         {
             Status = status,
             Title = title,
@@ -51,6 +65,6 @@ public sealed class ProblemDetailsExceptionMiddleware
         context.Response.StatusCode = status;
         context.Response.ContentType = "application/problem+json";
 
-        return context.Response.WriteAsync(JsonSerializer.Serialize(problem));
+        return context.Response.WriteAsJsonAsync(genericProblem);
     }
 }

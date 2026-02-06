@@ -1,7 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Pos.Application.Abstractions;
 using Pos.Infrastructure.Persistence;
+using Pos.Infrastructure.Repositories;
+using Pos.Infrastructure.Security;
+using Pos.Infrastructure.Services;
 
 namespace Pos.Infrastructure;
 
@@ -16,6 +20,10 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<PosDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddScoped<IAuthRepository, AuthRepository>();
+        services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddSingleton<IPasswordHasher, Sha256PasswordHasher>();
         return services;
     }
 }

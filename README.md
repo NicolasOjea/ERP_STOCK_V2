@@ -17,7 +17,7 @@ dotnet build -m:1
 ```
 
 ## Test
-Integration test expects a running Postgres instance. It uses:
+Integration tests expect a running Postgres instance. It uses:
 - `TEST_DB_CONNECTION` if set
 - or defaults to `Host=localhost;Port=5432;Database=posdb;Username=pos;Password=pospass`
 
@@ -36,8 +36,9 @@ dotnet ef database update -p src/Pos.Infrastructure -s src/Pos.WebApi
 dotnet run --project src/Pos.WebApi/Pos.WebApi.csproj
 ```
 
-Sample endpoint:
+Sample endpoints:
 - `GET /api/v1/health` -> returns status `ok`
+- `POST /api/v1/auth/login` -> returns `{ token, expiresAt }`
 
 ## Docker Compose
 Start:

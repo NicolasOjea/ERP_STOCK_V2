@@ -1,4 +1,5 @@
 using Pos.Domain.Entities;
+using Pos.Domain.Enums;
 
 namespace Pos.Infrastructure.Persistence;
 
@@ -40,21 +41,21 @@ public static class SeedData
 
     public static Permission[] Permissions =>
     [
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a001"), TenantId, "POS_VENTA_CREAR", "Crear venta", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a002"), TenantId, "POS_VENTA_CONFIRMAR", "Confirmar venta", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a003"), TenantId, "POS_VENTA_ANULAR", "Anular venta", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a004"), TenantId, "POS_DEVOLUCION_REGISTRAR", "Registrar devolucion", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a005"), TenantId, "POS_CAJA_ABRIR", "Abrir caja", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a006"), TenantId, "POS_CAJA_CERRAR", "Cerrar caja", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a007"), TenantId, "POS_STOCK_AJUSTAR", "Ajustar stock", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a008"), TenantId, "POS_PRODUCTO_VER", "Ver productos", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a009"), TenantId, "POS_PRODUCTO_EDITAR", "Editar productos", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a010"), TenantId, "POS_USUARIO_ADMIN", "Administrar usuarios", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a011"), TenantId, "POS_REPORTES_VER", "Ver reportes", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a012"), TenantId, "POS_CLIENTE_GESTIONAR", "Gestionar clientes", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a013"), TenantId, "POS_PROVEEDOR_GESTIONAR", "Gestionar proveedores", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a014"), TenantId, "POS_COMPRAS_REGISTRAR", "Registrar compras", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a015"), TenantId, "POS_CONFIGURACION_VER", "Ver configuracion", SeedTimestamp)
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a001"), TenantId, PermissionCodes.VentaCrear, "Crear venta", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a002"), TenantId, PermissionCodes.VentaConfirmar, "Confirmar venta", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a003"), TenantId, PermissionCodes.VentaAnular, "Anular venta", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a004"), TenantId, PermissionCodes.DevolucionRegistrar, "Registrar devolucion", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a005"), TenantId, PermissionCodes.CajaAbrir, "Abrir caja", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a006"), TenantId, PermissionCodes.CajaCerrar, "Cerrar caja", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a007"), TenantId, PermissionCodes.StockAjustar, "Ajustar stock", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a008"), TenantId, PermissionCodes.ProductoVer, "Ver productos", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a009"), TenantId, PermissionCodes.ProductoEditar, "Editar productos", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a010"), TenantId, PermissionCodes.UsuarioAdmin, "Administrar usuarios", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a011"), TenantId, PermissionCodes.ReportesVer, "Ver reportes", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a012"), TenantId, PermissionCodes.ClienteGestionar, "Gestionar clientes", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a013"), TenantId, PermissionCodes.ProveedorGestionar, "Gestionar proveedores", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a014"), TenantId, PermissionCodes.ComprasRegistrar, "Registrar compras", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a015"), TenantId, PermissionCodes.ConfiguracionVer, "Ver configuracion", SeedTimestamp)
     ];
 
     public static UserRole[] UserRoles =>

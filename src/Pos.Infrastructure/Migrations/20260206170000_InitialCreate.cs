@@ -386,21 +386,21 @@ public partial class InitialCreate : Migration
             columns: new[] { "Id", "TenantId", "Code", "Description", "CreatedAt", "UpdatedAt", "DeletedAt" },
             values: new object[,]
             {
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a001"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_VENTA_CREAR", "Crear venta", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a002"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_VENTA_CONFIRMAR", "Confirmar venta", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a003"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_VENTA_ANULAR", "Anular venta", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a004"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_DEVOLUCION_REGISTRAR", "Registrar devolucion", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a005"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_CAJA_ABRIR", "Abrir caja", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a006"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_CAJA_CERRAR", "Cerrar caja", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a007"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_STOCK_AJUSTAR", "Ajustar stock", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a008"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_PRODUCTO_VER", "Ver productos", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a009"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_PRODUCTO_EDITAR", "Editar productos", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a010"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_USUARIO_ADMIN", "Administrar usuarios", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a011"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_REPORTES_VER", "Ver reportes", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a012"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_CLIENTE_GESTIONAR", "Gestionar clientes", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a013"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_PROVEEDOR_GESTIONAR", "Gestionar proveedores", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a014"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_COMPRAS_REGISTRAR", "Registrar compras", seedTimestamp, seedTimestamp, null },
-                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a015"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "POS_CONFIGURACION_VER", "Ver configuracion", seedTimestamp, seedTimestamp, null }
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a001"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "VENTA_CREAR", "Crear venta", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a002"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "VENTA_CONFIRMAR", "Confirmar venta", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a003"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "VENTA_ANULAR", "Anular venta", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a004"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "DEVOLUCION_REGISTRAR", "Registrar devolucion", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a005"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "CAJA_ABRIR", "Abrir caja", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a006"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "CAJA_CERRAR", "Cerrar caja", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a007"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "STOCK_AJUSTAR", "Ajustar stock", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a008"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "PRODUCTO_VER", "Ver productos", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a009"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "PRODUCTO_EDITAR", "Editar productos", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a010"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "USUARIO_ADMIN", "Administrar usuarios", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a011"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "REPORTES_VER", "Ver reportes", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a012"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "CLIENTE_GESTIONAR", "Gestionar clientes", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a013"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "PROVEEDOR_GESTIONAR", "Gestionar proveedores", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a014"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "COMPRAS_REGISTRAR", "Registrar compras", seedTimestamp, seedTimestamp, null },
+                { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a015"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "CONFIGURACION_VER", "Ver configuracion", seedTimestamp, seedTimestamp, null }
             });
 
         migrationBuilder.InsertData(
@@ -468,3 +468,4 @@ public partial class InitialCreate : Migration
             name: "tenants");
     }
 }
+

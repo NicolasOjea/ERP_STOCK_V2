@@ -23,15 +23,17 @@ partial class PosDbContextModelSnapshot : ModelSnapshot
             b.Property<int>("Action")
                 .HasColumnType("integer");
 
+            b.Property<string>("AfterJson")
+                .HasColumnType("text");
+
+            b.Property<string>("BeforeJson")
+                .HasColumnType("text");
+
             b.Property<DateTimeOffset>("CreatedAt")
                 .HasColumnType("timestamp with time zone");
 
             b.Property<DateTimeOffset?>("DeletedAt")
                 .HasColumnType("timestamp with time zone");
-
-            b.Property<string>("Detail")
-                .HasMaxLength(2000)
-                .HasColumnType("character varying(2000)");
 
             b.Property<string>("EntityId")
                 .IsRequired()
@@ -43,8 +45,14 @@ partial class PosDbContextModelSnapshot : ModelSnapshot
                 .HasMaxLength(150)
                 .HasColumnType("character varying(150)");
 
+            b.Property<string>("MetadataJson")
+                .HasColumnType("text");
+
             b.Property<DateTimeOffset>("OccurredAt")
                 .HasColumnType("timestamp with time zone");
+
+            b.Property<Guid>("SucursalId")
+                .HasColumnType("uuid");
 
             b.Property<Guid>("TenantId")
                 .HasColumnType("uuid");
@@ -56,6 +64,8 @@ partial class PosDbContextModelSnapshot : ModelSnapshot
                 .HasColumnType("uuid");
 
             b.HasKey("Id");
+
+            b.HasIndex("SucursalId");
 
             b.HasIndex("TenantId");
 

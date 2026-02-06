@@ -8,5 +8,7 @@ public enum AuditAction
     Adjust = 4,
     Confirm = 5,
     Cancel = 6,
-    Close = 7
+    Close = 7,
+    Login = 8,
+    RoleChange = 9
 }
