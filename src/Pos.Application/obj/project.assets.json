@@ -27,7 +27,7 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Usuario\\.nuget\\packages\\": {}
+    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
@@ -35,7 +35,7 @@
       "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj",
       "projectName": "Pos.Application",
       "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj",
-      "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+      "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [

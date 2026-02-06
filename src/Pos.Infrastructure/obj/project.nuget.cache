@@ -1,8 +1,21 @@
 {
   "version": 2,
-  "dgSpecHash": "QiFkFU5sxOw=",
-  "success": true,
+  "dgSpecHash": "uvrq/jTMj8k=",
+  "success": false,
   "projectFilePath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj",
   "expectedPackageFiles": [],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se pudo recuperar información sobre \"Microsoft.EntityFrameworkCore.Design\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.design/index.json\".",
+      "libraryId": "Microsoft.EntityFrameworkCore.Design"
+    },
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se pudo recuperar información sobre \"Microsoft.EntityFrameworkCore\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore/index.json\".",
+      "libraryId": "Microsoft.EntityFrameworkCore"
+    }
+  ]
 }

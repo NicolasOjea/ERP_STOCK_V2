@@ -13,3 +13,4 @@ C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\tests\Pos.Tests\obj\
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\tests\Pos.Tests\obj\Debug\net8.0\refint\Pos.Tests.dll
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\tests\Pos.Tests\obj\Debug\net8.0\Pos.Tests.pdb
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\tests\Pos.Tests\obj\Debug\net8.0\ref\Pos.Tests.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\tests\Pos.Tests\obj\Debug\net8.0\Pos.Tests.sourcelink.json

@@ -1,8 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "kPB8v1OsutQ=",
-  "success": true,
+  "dgSpecHash": "k3g1O/PJ4OI=",
+  "success": false,
   "projectFilePath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj",
   "expectedPackageFiles": [],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se pudo recuperar información sobre \"Microsoft.EntityFrameworkCore\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore/index.json\".",
+      "libraryId": "Microsoft.EntityFrameworkCore"
+    }
+  ]
 }

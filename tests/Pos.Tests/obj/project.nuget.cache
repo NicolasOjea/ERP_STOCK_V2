@@ -1,8 +1,21 @@
 {
   "version": 2,
-  "dgSpecHash": "fQmnxi1aBb8=",
-  "success": true,
+  "dgSpecHash": "UOgWMlodQLM=",
+  "success": false,
   "projectFilePath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\tests\\Pos.Tests\\Pos.Tests.csproj",
   "expectedPackageFiles": [],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se pudo recuperar información sobre \"xunit.runner.visualstudio\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/xunit.runner.visualstudio/index.json\".",
+      "libraryId": "xunit.runner.visualstudio"
+    },
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se pudo recuperar información sobre \"Microsoft.NET.Test.Sdk\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/microsoft.net.test.sdk/index.json\".",
+      "libraryId": "Microsoft.NET.Test.Sdk"
+    }
+  ]
 }

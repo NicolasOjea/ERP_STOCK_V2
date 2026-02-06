@@ -1,71 +1,14 @@
 {
   "version": 3,
   "targets": {
-    "net8.0": {
-      "Pos.Application/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v8.0",
-        "dependencies": {
-          "Pos.Domain": "1.0.0"
-        },
-        "compile": {
-          "bin/placeholder/Pos.Application.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/Pos.Application.dll": {}
-        }
-      },
-      "Pos.Domain/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v8.0",
-        "compile": {
-          "bin/placeholder/Pos.Domain.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/Pos.Domain.dll": {}
-        }
-      },
-      "Pos.Infrastructure/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v8.0",
-        "dependencies": {
-          "Pos.Application": "1.0.0",
-          "Pos.Domain": "1.0.0"
-        },
-        "compile": {
-          "bin/placeholder/Pos.Infrastructure.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/Pos.Infrastructure.dll": {}
-        }
-      }
-    }
+    "net8.0": {}
   },
-  "libraries": {
-    "Pos.Application/1.0.0": {
-      "type": "project",
-      "path": "../Pos.Application/Pos.Application.csproj",
-      "msbuildProject": "../Pos.Application/Pos.Application.csproj"
-    },
-    "Pos.Domain/1.0.0": {
-      "type": "project",
-      "path": "../Pos.Domain/Pos.Domain.csproj",
-      "msbuildProject": "../Pos.Domain/Pos.Domain.csproj"
-    },
-    "Pos.Infrastructure/1.0.0": {
-      "type": "project",
-      "path": "../Pos.Infrastructure/Pos.Infrastructure.csproj",
-      "msbuildProject": "../Pos.Infrastructure/Pos.Infrastructure.csproj"
-    }
-  },
+  "libraries": {},
   "projectFileDependencyGroups": {
-    "net8.0": [
-      "Pos.Application >= 1.0.0",
-      "Pos.Infrastructure >= 1.0.0"
-    ]
+    "net8.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Usuario\\.nuget\\packages\\": {}
+    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
@@ -73,7 +16,7 @@
       "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj",
       "projectName": "Pos.WebApi",
       "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj",
-      "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+      "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
@@ -136,5 +79,13 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se pudo recuperar información sobre \"Microsoft.EntityFrameworkCore\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore/index.json\".",
+      "libraryId": "Microsoft.EntityFrameworkCore"
+    }
+  ]
 }

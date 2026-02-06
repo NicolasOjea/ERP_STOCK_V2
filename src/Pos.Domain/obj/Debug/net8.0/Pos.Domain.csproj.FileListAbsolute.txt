@@ -9,3 +9,4 @@ C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\D
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\refint\Pos.Domain.dll
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.pdb
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\ref\Pos.Domain.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.sourcelink.json

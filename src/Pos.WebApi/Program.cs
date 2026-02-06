@@ -1,6 +1,5 @@
-using Pos.Application.Abstractions;
-using Pos.Application.UseCases.Health;
-using Pos.Infrastructure.Persistence;
+using Pos.Application.Common;
+using Pos.Infrastructure;
 using Pos.WebApi.Auth;
 using Pos.WebApi.Middleware;
 
@@ -10,8 +9,8 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddPosAuthentication();
 
-builder.Services.AddScoped<IHealthService, HealthService>();
-builder.Services.AddSingleton<PosDbContext>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 

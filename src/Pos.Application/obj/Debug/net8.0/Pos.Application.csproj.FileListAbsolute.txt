@@ -13,3 +13,4 @@ C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Application\
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Application\obj\Debug\net8.0\refint\Pos.Application.dll
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Application\obj\Debug\net8.0\Pos.Application.pdb
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Application\obj\Debug\net8.0\ref\Pos.Application.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Application\obj\Debug\net8.0\Pos.Application.sourcelink.json

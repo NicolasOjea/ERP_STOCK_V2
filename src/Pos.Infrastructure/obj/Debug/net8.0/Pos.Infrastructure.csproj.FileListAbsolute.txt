@@ -15,3 +15,4 @@ C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Infrastructu
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Infrastructure\obj\Debug\net8.0\refint\Pos.Infrastructure.dll
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Infrastructure\obj\Debug\net8.0\Pos.Infrastructure.pdb
 C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Infrastructure\obj\Debug\net8.0\ref\Pos.Infrastructure.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Infrastructure\obj\Debug\net8.0\Pos.Infrastructure.sourcelink.json

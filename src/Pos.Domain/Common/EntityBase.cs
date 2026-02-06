@@ -2,6 +2,14 @@ namespace Pos.Domain.Common;
 
 public abstract class EntityBase
 {
+    protected EntityBase()
+    {
+        Id = Guid.Empty;
+        TenantId = Guid.Empty;
+        CreatedAt = DateTimeOffset.MinValue;
+        UpdatedAt = DateTimeOffset.MinValue;
+    }
+
     protected EntityBase(Guid id, Guid tenantId, DateTimeOffset createdAtUtc)
     {
         if (id == Guid.Empty) throw new ArgumentException("Id cannot be empty.", nameof(id));

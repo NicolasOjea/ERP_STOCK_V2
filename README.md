@@ -13,26 +13,48 @@
 
 ## Build
 ```bash
-dotnet build
-```
-If your environment cancels parallel builds, use:
-```bash
 dotnet build -m:1
 ```
 
 ## Test
-```bash
-dotnet test
-```
-If your environment cancels parallel builds, use:
+Integration test expects a running Postgres instance. It uses:
+- `TEST_DB_CONNECTION` if set
+- or defaults to `Host=localhost;Port=5432;Database=posdb;Username=pos;Password=pospass`
+
 ```bash
 dotnet test -m:1
 ```
 
-## Run WebApi
+## Migrations
+Apply migrations:
+```bash
+dotnet ef database update -p src/Pos.Infrastructure -s src/Pos.WebApi
+```
+
+## Run WebApi (local)
 ```bash
 dotnet run --project src/Pos.WebApi/Pos.WebApi.csproj
 ```
 
 Sample endpoint:
-- `GET /api/v1/health`
+- `GET /api/v1/health` -> returns status `ok`
+
+## Docker Compose
+Start:
+```bash
+docker compose up -d
+```
+Logs:
+```bash
+docker compose logs -f pos-api
+```
+
+Optional pgAdmin:
+```bash
+docker compose --profile tools up -d
+```
+
+Health:
+```bash
+curl http://localhost:8080/api/v1/health
+```
