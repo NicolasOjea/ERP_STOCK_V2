@@ -38,4 +38,19 @@ public interface IProductRepository
         Guid productId,
         Guid codeId,
         CancellationToken cancellationToken = default);
+
+    Task<ProductProveedorDto?> AddProveedorAsync(
+        Guid tenantId,
+        Guid productId,
+        Guid proveedorId,
+        bool esPrincipal,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductProveedorDto?> SetProveedorPrincipalAsync(
+        Guid tenantId,
+        Guid productId,
+        Guid relationId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
 }

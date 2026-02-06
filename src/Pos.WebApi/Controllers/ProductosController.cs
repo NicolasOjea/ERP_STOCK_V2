@@ -86,6 +86,31 @@ public sealed class ProductosController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/proveedores")]
+    [Authorize(Policy = "PERM_PRODUCTO_EDITAR")]
+    [ProducesResponseType(typeof(ProductProveedorDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductProveedorDto>> AddProveedor(
+        Guid id,
+        [FromBody] ProductProveedorCreateDto request,
+        CancellationToken cancellationToken)
+    {
+        var relation = await _productService.AddProveedorAsync(id, request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id }, relation);
+    }
+
+    [HttpPatch("{id:guid}/proveedores/{relId:guid}")]
+    [Authorize(Policy = "PERM_PRODUCTO_EDITAR")]
+    [ProducesResponseType(typeof(ProductProveedorDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ProductProveedorDto>> SetProveedorPrincipal(
+        Guid id,
+        Guid relId,
+        [FromBody] ProductProveedorUpdateDto request,
+        CancellationToken cancellationToken)
+    {
+        var relation = await _productService.SetProveedorPrincipalAsync(id, relId, request, cancellationToken);
+        return Ok(relation);
+    }
+
     [HttpPatch("{id:guid}/stock-config")]
     [Authorize(Policy = "PERM_STOCK_AJUSTAR")]
     [ProducesResponseType(typeof(StockConfigDto), StatusCodes.Status200OK)]

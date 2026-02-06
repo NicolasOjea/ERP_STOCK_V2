@@ -116,6 +116,16 @@ public sealed class ProductService
                 });
         }
 
+        if (request.PrecioBase.HasValue && request.PrecioBase.Value < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["precioBase"] = new[] { "El precio base no puede ser negativo." }
+                });
+        }
+
         var tenantId = EnsureTenant();
         var now = DateTimeOffset.UtcNow;
 
@@ -171,7 +181,8 @@ public sealed class ProductService
             || request.CategoriaId is not null
             || request.MarcaId is not null
             || request.ProveedorId is not null
-            || request.IsActive is not null;
+            || request.IsActive is not null
+            || request.PrecioBase is not null;
 
         if (!hasAnyChange)
         {
@@ -230,6 +241,16 @@ public sealed class ProductService
                 new Dictionary<string, string[]>
                 {
                     ["proveedorId"] = new[] { "El proveedor es invalido." }
+                });
+        }
+
+        if (request.PrecioBase.HasValue && request.PrecioBase.Value < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["precioBase"] = new[] { "El precio base no puede ser negativo." }
                 });
         }
 
@@ -349,6 +370,131 @@ public sealed class ProductService
             null,
             JsonSerializer.Serialize(new { productoId = productId }),
             cancellationToken);
+    }
+
+    public async Task<ProductProveedorDto> AddProveedorAsync(
+        Guid productId,
+        ProductProveedorCreateDto request,
+        CancellationToken cancellationToken)
+    {
+        if (productId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["productId"] = new[] { "El producto es obligatorio." }
+                });
+        }
+
+        if (request is null)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["request"] = new[] { "El request es obligatorio." }
+                });
+        }
+
+        if (request.ProveedorId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var now = DateTimeOffset.UtcNow;
+        var esPrincipal = request.EsPrincipal ?? false;
+
+        var result = await _productRepository.AddProveedorAsync(
+            tenantId,
+            productId,
+            request.ProveedorId,
+            esPrincipal,
+            now,
+            cancellationToken);
+
+        if (result is null)
+        {
+            throw new NotFoundException("Producto no encontrado.");
+        }
+
+        await _auditLogService.LogAsync(
+            "ProductoProveedor",
+            result.Id.ToString(),
+            AuditAction.Create,
+            null,
+            JsonSerializer.Serialize(result),
+            JsonSerializer.Serialize(new { productoId = productId }),
+            cancellationToken);
+
+        return result;
+    }
+
+    public async Task<ProductProveedorDto> SetProveedorPrincipalAsync(
+        Guid productId,
+        Guid relationId,
+        ProductProveedorUpdateDto request,
+        CancellationToken cancellationToken)
+    {
+        if (productId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["productId"] = new[] { "El producto es obligatorio." }
+                });
+        }
+
+        if (relationId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["relationId"] = new[] { "La relacion es obligatoria." }
+                });
+        }
+
+        if (request is null || !request.EsPrincipal)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["esPrincipal"] = new[] { "Debe marcar como principal." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var result = await _productRepository.SetProveedorPrincipalAsync(
+            tenantId,
+            productId,
+            relationId,
+            DateTimeOffset.UtcNow,
+            cancellationToken);
+
+        if (result is null)
+        {
+            throw new NotFoundException("Proveedor no encontrado para el producto.");
+        }
+
+        await _auditLogService.LogAsync(
+            "ProductoProveedor",
+            result.Id.ToString(),
+            AuditAction.Update,
+            null,
+            JsonSerializer.Serialize(result),
+            JsonSerializer.Serialize(new { productoId = productId }),
+            cancellationToken);
+
+        return result;
     }
 
     private Guid EnsureTenant()

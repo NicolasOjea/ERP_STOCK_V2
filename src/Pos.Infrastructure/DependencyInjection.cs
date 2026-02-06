@@ -27,6 +27,14 @@ public static class DependencyInjection
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<IStockMovementRepository, StockMovementRepository>();
         services.AddScoped<ICajaRepository, CajaRepository>();
+        services.AddScoped<IVentaRepository, VentaRepository>();
+        services.AddScoped<IProveedorRepository, ProveedorRepository>();
+        services.AddScoped<IOrdenCompraRepository, OrdenCompraRepository>();
+        services.AddScoped<IDocumentoCompraRepository, DocumentoCompraRepository>();
+        services.AddScoped<IPreRecepcionRepository, PreRecepcionRepository>();
+        services.AddScoped<IDocumentParser, Adapters.JsonDocumentParser>();
+        services.AddScoped<IRecepcionRepository, RecepcionRepository>();
+        services.AddScoped<IListaPrecioRepository, ListaPrecioRepository>();
         services.AddSingleton<IPasswordHasher, Sha256PasswordHasher>();
         return services;
     }

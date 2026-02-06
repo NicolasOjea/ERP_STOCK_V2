@@ -17,17 +17,20 @@ public sealed class Producto : EntityBase
         Guid? marcaId,
         Guid? proveedorId,
         DateTimeOffset createdAtUtc,
+        decimal precioBase = 1m,
         bool isActive = true)
         : base(id, tenantId, createdAtUtc)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.", nameof(name));
         if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("Sku is required.", nameof(sku));
+        if (precioBase < 0) throw new ArgumentException("PrecioBase must be >= 0.", nameof(precioBase));
 
         Name = name;
         Sku = sku;
         CategoriaId = categoriaId;
         MarcaId = marcaId;
         ProveedorId = proveedorId;
+        PrecioBase = precioBase;
         IsActive = isActive;
     }
 
@@ -36,6 +39,7 @@ public sealed class Producto : EntityBase
     public Guid? CategoriaId { get; private set; }
     public Guid? MarcaId { get; private set; }
     public Guid? ProveedorId { get; private set; }
+    public decimal PrecioBase { get; private set; }
     public bool IsActive { get; private set; }
 
     public void Update(
@@ -44,18 +48,27 @@ public sealed class Producto : EntityBase
         Guid? categoriaId,
         Guid? marcaId,
         Guid? proveedorId,
+        decimal precioBase,
         bool isActive,
         DateTimeOffset updatedAtUtc)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.", nameof(name));
         if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("Sku is required.", nameof(sku));
+        if (precioBase < 0) throw new ArgumentException("PrecioBase must be >= 0.", nameof(precioBase));
 
         Name = name;
         Sku = sku;
         CategoriaId = categoriaId;
         MarcaId = marcaId;
         ProveedorId = proveedorId;
+        PrecioBase = precioBase;
         IsActive = isActive;
+        MarkUpdated(updatedAtUtc);
+    }
+
+    public void SetProveedorPrincipal(Guid? proveedorId, DateTimeOffset updatedAtUtc)
+    {
+        ProveedorId = proveedorId;
         MarkUpdated(updatedAtUtc);
     }
 }

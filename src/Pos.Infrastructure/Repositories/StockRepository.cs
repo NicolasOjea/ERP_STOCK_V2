@@ -144,7 +144,10 @@ public sealed class StockRepository : IStockRepository
     {
         var configs = await (from c in _dbContext.ProductoStockConfigs.AsNoTracking()
                 join p in _dbContext.Productos.AsNoTracking() on c.ProductoId equals p.Id
-                join pr in _dbContext.Proveedores.AsNoTracking() on p.ProveedorId equals pr.Id into prov
+                join pp in _dbContext.ProductoProveedores.AsNoTracking()
+                    on new { p.Id, p.TenantId } equals new { Id = pp.ProductoId, pp.TenantId } into ppJoin
+                from pp in ppJoin.Where(x => x.EsPrincipal).DefaultIfEmpty()
+                join pr in _dbContext.Proveedores.AsNoTracking() on pp.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 join s in _dbContext.StockSaldos.AsNoTracking()
                     on new { c.ProductoId, c.TenantId, c.SucursalId }
@@ -156,7 +159,7 @@ public sealed class StockRepository : IStockRepository
                     p.Id,
                     p.Name,
                     p.Sku,
-                    p.ProveedorId,
+                    ProveedorId = pp != null ? pp.ProveedorId : null,
                     Proveedor = pr != null ? pr.Name : null,
                     StockActual = saldo != null ? saldo.CantidadActual : 0m,
                     c.StockMinimo,
@@ -198,7 +201,10 @@ public sealed class StockRepository : IStockRepository
     {
         var configs = await (from c in _dbContext.ProductoStockConfigs.AsNoTracking()
                 join p in _dbContext.Productos.AsNoTracking() on c.ProductoId equals p.Id
-                join pr in _dbContext.Proveedores.AsNoTracking() on p.ProveedorId equals pr.Id into prov
+                join pp in _dbContext.ProductoProveedores.AsNoTracking()
+                    on new { p.Id, p.TenantId } equals new { Id = pp.ProductoId, pp.TenantId } into ppJoin
+                from pp in ppJoin.Where(x => x.EsPrincipal).DefaultIfEmpty()
+                join pr in _dbContext.Proveedores.AsNoTracking() on pp.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 join s in _dbContext.StockSaldos.AsNoTracking()
                     on new { c.ProductoId, c.TenantId, c.SucursalId }
@@ -210,7 +216,7 @@ public sealed class StockRepository : IStockRepository
                     p.Id,
                     p.Name,
                     p.Sku,
-                    p.ProveedorId,
+                    ProveedorId = pp != null ? pp.ProveedorId : null,
                     Proveedor = pr != null ? pr.Name : null,
                     StockActual = saldo != null ? saldo.CantidadActual : 0m,
                     c.StockMinimo,

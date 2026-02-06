@@ -188,10 +188,24 @@ public sealed class ProductRepository : IProductRepository
             request.MarcaId,
             request.ProveedorId,
             nowUtc,
+            request.PrecioBase ?? 1m,
             request.IsActive ?? true);
 
         _dbContext.Productos.Add(product);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (request.ProveedorId.HasValue)
+        {
+            var relation = new ProductoProveedor(
+                Guid.NewGuid(),
+                tenantId,
+                product.Id,
+                request.ProveedorId.Value,
+                true,
+                nowUtc);
+            _dbContext.ProductoProveedores.Add(relation);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         return product.Id;
     }
@@ -276,8 +290,45 @@ public sealed class ProductRepository : IProductRepository
         var newMarcaId = request.MarcaId ?? product.MarcaId;
         var newProveedorId = request.ProveedorId ?? product.ProveedorId;
         var newIsActive = request.IsActive ?? product.IsActive;
+        var newPrecioBase = request.PrecioBase ?? product.PrecioBase;
 
-        product.Update(newName, newSku, newCategoriaId, newMarcaId, newProveedorId, newIsActive, nowUtc);
+        product.Update(newName, newSku, newCategoriaId, newMarcaId, newProveedorId, newPrecioBase, newIsActive, nowUtc);
+
+        if (request.ProveedorId.HasValue)
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            var relations = await _dbContext.ProductoProveedores
+                .Where(r => r.TenantId == tenantId && r.ProductoId == productId)
+                .ToListAsync(cancellationToken);
+
+            var relation = relations.FirstOrDefault(r => r.ProveedorId == request.ProveedorId.Value);
+            if (relation is null)
+            {
+                relation = new ProductoProveedor(
+                    Guid.NewGuid(),
+                    tenantId,
+                    productId,
+                    request.ProveedorId.Value,
+                    true,
+                    nowUtc);
+                _dbContext.ProductoProveedores.Add(relation);
+            }
+
+            foreach (var rel in relations.Where(r => r.EsPrincipal && r.Id != relation.Id))
+            {
+                rel.SetPrincipal(false, nowUtc);
+            }
+
+            if (!relation.EsPrincipal)
+            {
+                relation.SetPrincipal(true, nowUtc);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
@@ -332,6 +383,126 @@ public sealed class ProductRepository : IProductRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return dto;
+    }
+
+    public async Task<ProductProveedorDto?> AddProveedorAsync(
+        Guid tenantId,
+        Guid productId,
+        Guid proveedorId,
+        bool esPrincipal,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var product = await _dbContext.Productos
+            .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.Id == productId, cancellationToken);
+
+        if (product is null)
+        {
+            return null;
+        }
+
+        var proveedorExists = await _dbContext.Proveedores.AsNoTracking()
+            .AnyAsync(p => p.TenantId == tenantId && p.Id == proveedorId, cancellationToken);
+
+        if (!proveedorExists)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor no existe." }
+                });
+        }
+
+        var relations = await _dbContext.ProductoProveedores
+            .Where(r => r.TenantId == tenantId && r.ProductoId == productId)
+            .ToListAsync(cancellationToken);
+
+        var relation = relations.FirstOrDefault(r => r.ProveedorId == proveedorId);
+        if (relation is null)
+        {
+            relation = new ProductoProveedor(Guid.NewGuid(), tenantId, productId, proveedorId, esPrincipal, nowUtc);
+            _dbContext.ProductoProveedores.Add(relation);
+        }
+
+        if (esPrincipal)
+        {
+            foreach (var rel in relations.Where(r => r.EsPrincipal && r.Id != relation.Id))
+            {
+                rel.SetPrincipal(false, nowUtc);
+            }
+
+            if (!relation.EsPrincipal)
+            {
+                relation.SetPrincipal(true, nowUtc);
+            }
+
+            product.SetProveedorPrincipal(proveedorId, nowUtc);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        var proveedor = await _dbContext.Proveedores.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.Id == proveedorId)
+            .Select(p => new { p.Id, p.Name })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var nombre = proveedor?.Name ?? string.Empty;
+        return new ProductProveedorDto(relation.Id, proveedorId, nombre, relation.EsPrincipal);
+    }
+
+    public async Task<ProductProveedorDto?> SetProveedorPrincipalAsync(
+        Guid tenantId,
+        Guid productId,
+        Guid relationId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var product = await _dbContext.Productos
+            .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.Id == productId, cancellationToken);
+
+        if (product is null)
+        {
+            return null;
+        }
+
+        var relations = await _dbContext.ProductoProveedores
+            .Where(r => r.TenantId == tenantId && r.ProductoId == productId)
+            .ToListAsync(cancellationToken);
+
+        var relation = relations.FirstOrDefault(r => r.Id == relationId);
+        if (relation is null)
+        {
+            return null;
+        }
+
+        foreach (var rel in relations.Where(r => r.EsPrincipal && r.Id != relation.Id))
+        {
+            rel.SetPrincipal(false, nowUtc);
+        }
+
+        if (!relation.EsPrincipal)
+        {
+            relation.SetPrincipal(true, nowUtc);
+        }
+
+        product.SetProveedorPrincipal(relation.ProveedorId, nowUtc);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        var proveedor = await _dbContext.Proveedores.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.Id == relation.ProveedorId)
+            .Select(p => new { p.Id, p.Name })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var nombre = proveedor?.Name ?? string.Empty;
+        return new ProductProveedorDto(relation.Id, relation.ProveedorId, nombre, relation.EsPrincipal);
     }
 }
 

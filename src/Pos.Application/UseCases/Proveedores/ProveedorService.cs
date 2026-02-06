@@ -1,0 +1,163 @@
+using System.Text.Json;
+using Pos.Application.Abstractions;
+using Pos.Application.DTOs.Proveedores;
+using Pos.Domain.Enums;
+using Pos.Domain.Exceptions;
+
+namespace Pos.Application.UseCases.Proveedores;
+
+public sealed class ProveedorService
+{
+    private readonly IProveedorRepository _proveedorRepository;
+    private readonly IRequestContext _requestContext;
+    private readonly IAuditLogService _auditLogService;
+
+    public ProveedorService(
+        IProveedorRepository proveedorRepository,
+        IRequestContext requestContext,
+        IAuditLogService auditLogService)
+    {
+        _proveedorRepository = proveedorRepository;
+        _requestContext = requestContext;
+        _auditLogService = auditLogService;
+    }
+
+    public async Task<IReadOnlyList<ProveedorDto>> SearchAsync(
+        string? search,
+        bool? activo,
+        CancellationToken cancellationToken)
+    {
+        var tenantId = EnsureTenant();
+        return await _proveedorRepository.SearchAsync(tenantId, search, activo, cancellationToken);
+    }
+
+    public async Task<ProveedorDto> CreateAsync(ProveedorCreateDto request, CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["request"] = new[] { "El request es obligatorio." }
+                });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["name"] = new[] { "El nombre es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var now = DateTimeOffset.UtcNow;
+        var normalized = request with { Name = request.Name.Trim() };
+
+        var id = await _proveedorRepository.CreateAsync(tenantId, normalized, now, cancellationToken);
+        var proveedor = await _proveedorRepository.GetByIdAsync(tenantId, id, cancellationToken);
+        if (proveedor is null)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        await _auditLogService.LogAsync(
+            "Proveedor",
+            proveedor.Id.ToString(),
+            AuditAction.Create,
+            null,
+            JsonSerializer.Serialize(proveedor),
+            null,
+            cancellationToken);
+
+        return proveedor;
+    }
+
+    public async Task<ProveedorDto> UpdateAsync(Guid proveedorId, ProveedorUpdateDto request, CancellationToken cancellationToken)
+    {
+        if (proveedorId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es obligatorio." }
+                });
+        }
+
+        if (request is null)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["request"] = new[] { "El request es obligatorio." }
+                });
+        }
+
+        var hasChange = request.Name is not null || request.IsActive is not null;
+        if (!hasChange)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["request"] = new[] { "Debe enviar al menos un cambio." }
+                });
+        }
+
+        if (request.Name is not null && string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["name"] = new[] { "El nombre no puede estar vacio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var before = await _proveedorRepository.GetByIdAsync(tenantId, proveedorId, cancellationToken);
+        if (before is null)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        var normalized = request with { Name = request.Name?.Trim() };
+        var updated = await _proveedorRepository.UpdateAsync(tenantId, proveedorId, normalized, DateTimeOffset.UtcNow, cancellationToken);
+        if (!updated)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        var after = await _proveedorRepository.GetByIdAsync(tenantId, proveedorId, cancellationToken);
+        if (after is null)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        await _auditLogService.LogAsync(
+            "Proveedor",
+            proveedorId.ToString(),
+            AuditAction.Update,
+            JsonSerializer.Serialize(before),
+            JsonSerializer.Serialize(after),
+            null,
+            cancellationToken);
+
+        return after;
+    }
+
+    private Guid EnsureTenant()
+    {
+        if (_requestContext.TenantId == Guid.Empty)
+        {
+            throw new UnauthorizedException("Contexto de tenant invalido.");
+        }
+
+        return _requestContext.TenantId;
+    }
+}
