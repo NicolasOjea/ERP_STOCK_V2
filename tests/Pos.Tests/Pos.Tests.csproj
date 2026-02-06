@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <VSTestTargets>$(MSBuildThisFileDirectory)..\..\build\Custom.VSTest.targets</VSTestTargets>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Pos.Domain\Pos.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
