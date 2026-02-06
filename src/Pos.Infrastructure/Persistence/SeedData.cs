@@ -55,7 +55,8 @@ public static class SeedData
         new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a012"), TenantId, PermissionCodes.ClienteGestionar, "Gestionar clientes", SeedTimestamp),
         new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a013"), TenantId, PermissionCodes.ProveedorGestionar, "Gestionar proveedores", SeedTimestamp),
         new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a014"), TenantId, PermissionCodes.ComprasRegistrar, "Registrar compras", SeedTimestamp),
-        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a015"), TenantId, PermissionCodes.ConfiguracionVer, "Ver configuracion", SeedTimestamp)
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a015"), TenantId, PermissionCodes.ConfiguracionVer, "Ver configuracion", SeedTimestamp),
+        new Permission(Guid.Parse("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a016"), TenantId, PermissionCodes.CajaMovimiento, "Movimientos de caja", SeedTimestamp)
     ];
 
     public static UserRole[] UserRoles =>
@@ -80,6 +81,8 @@ public static class SeedData
         new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c13"), TenantId, RoleAdminId, Permissions[11].Id, SeedTimestamp),
         new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c14"), TenantId, RoleAdminId, Permissions[12].Id, SeedTimestamp),
         new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c15"), TenantId, RoleAdminId, Permissions[13].Id, SeedTimestamp),
-        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c16"), TenantId, RoleAdminId, Permissions[14].Id, SeedTimestamp)
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c16"), TenantId, RoleAdminId, Permissions[14].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c17"), TenantId, RoleEncargadoId, Permissions[15].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c18"), TenantId, RoleAdminId, Permissions[15].Id, SeedTimestamp)
     ];
 }

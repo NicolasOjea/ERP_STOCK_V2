@@ -23,6 +23,10 @@ public static class DependencyInjection
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IUserRoleRepository, UserRoleRepository>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IStockRepository, StockRepository>();
+        services.AddScoped<IStockMovementRepository, StockMovementRepository>();
+        services.AddScoped<ICajaRepository, CajaRepository>();
         services.AddSingleton<IPasswordHasher, Sha256PasswordHasher>();
         return services;
     }

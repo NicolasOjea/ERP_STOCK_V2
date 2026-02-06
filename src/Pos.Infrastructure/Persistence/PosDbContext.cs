@@ -17,6 +17,18 @@ public sealed class PosDbContext : DbContext
     public DbSet<UserRole> UsuarioRoles => Set<UserRole>();
     public DbSet<RolePermission> RolPermisos => Set<RolePermission>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<Marca> Marcas => Set<Marca>();
+    public DbSet<Producto> Productos => Set<Producto>();
+    public DbSet<ProductoCodigo> ProductoCodigos => Set<ProductoCodigo>();
+    public DbSet<ProductoStockConfig> ProductoStockConfigs => Set<ProductoStockConfig>();
+    public DbSet<StockSaldo> StockSaldos => Set<StockSaldo>();
+    public DbSet<StockMovimiento> StockMovimientos => Set<StockMovimiento>();
+    public DbSet<StockMovimientoItem> StockMovimientoItems => Set<StockMovimientoItem>();
+    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
+    public DbSet<Caja> Cajas => Set<Caja>();
+    public DbSet<CajaSesion> CajaSesiones => Set<CajaSesion>();
+    public DbSet<CajaMovimiento> CajaMovimientos => Set<CajaMovimiento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -8,6 +8,7 @@ public static class PermissionCodes
     public const string DevolucionRegistrar = "DEVOLUCION_REGISTRAR";
     public const string CajaAbrir = "CAJA_ABRIR";
     public const string CajaCerrar = "CAJA_CERRAR";
+    public const string CajaMovimiento = "CAJA_MOVIMIENTO";
     public const string StockAjustar = "STOCK_AJUSTAR";
     public const string ProductoVer = "PRODUCTO_VER";
     public const string ProductoEditar = "PRODUCTO_EDITAR";
@@ -26,6 +27,7 @@ public static class PermissionCodes
         DevolucionRegistrar,
         CajaAbrir,
         CajaCerrar,
+        CajaMovimiento,
         StockAjustar,
         ProductoVer,
         ProductoEditar,

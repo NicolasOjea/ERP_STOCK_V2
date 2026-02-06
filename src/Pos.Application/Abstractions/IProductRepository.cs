@@ -1,0 +1,41 @@
+using Pos.Application.DTOs.Products;
+
+namespace Pos.Application.Abstractions;
+
+public interface IProductRepository
+{
+    Task<IReadOnlyList<ProductListItemDto>> SearchAsync(
+        Guid tenantId,
+        string? search,
+        Guid? categoriaId,
+        bool? activo,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductDetailDto?> GetByIdAsync(Guid tenantId, Guid productId, CancellationToken cancellationToken = default);
+
+    Task<Guid> CreateAsync(
+        Guid tenantId,
+        ProductCreateDto request,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateAsync(
+        Guid tenantId,
+        Guid productId,
+        ProductUpdateDto request,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductCodeDto?> AddCodeAsync(
+        Guid tenantId,
+        Guid productId,
+        string code,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductCodeDto?> RemoveCodeAsync(
+        Guid tenantId,
+        Guid productId,
+        Guid codeId,
+        CancellationToken cancellationToken = default);
+}

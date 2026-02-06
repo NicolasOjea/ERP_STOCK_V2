@@ -84,6 +84,11 @@ public static class AuthenticationExtensions
                 options.AddPolicy($"PERM_{permission}", policy =>
                     policy.RequireClaim("permissions", permission));
             }
+
+            options.AddPolicy("ROLE_ENCARGADO_ADMIN", policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasClaim("roles", "ENCARGADO")
+                    || context.User.HasClaim("roles", "ADMIN")));
         });
 
         return services;

@@ -72,6 +72,513 @@ partial class PosDbContextModelSnapshot : ModelSnapshot
             b.ToTable("audit_logs");
         });
 
+        modelBuilder.Entity("Pos.Domain.Entities.Caja", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("IsActive")
+                .HasColumnType("boolean");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(200)
+                .HasColumnType("character varying(200)");
+
+            b.Property<Guid>("SucursalId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("SucursalId");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("cajas");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.CajaMovimiento", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("CajaSesionId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset>("Fecha")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("MedioPago")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("character varying(100)");
+
+            b.Property<decimal>("Monto")
+                .HasColumnType("numeric(18,4)");
+
+            b.Property<string>("Motivo")
+                .IsRequired()
+                .HasMaxLength(500)
+                .HasColumnType("character varying(500)");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<int>("Tipo")
+                .HasColumnType("integer");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("CajaSesionId");
+
+            b.HasIndex("Fecha");
+
+            b.HasIndex("MedioPago");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("caja_movimientos");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.CajaSesion", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("AperturaAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("ArqueoJson")
+                .HasColumnType("jsonb");
+
+            b.Property<Guid>("CajaId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset?>("CierreAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<decimal>("DiferenciaTotal")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("numeric(18,4)")
+                .HasDefaultValue(0m);
+
+            b.Property<int>("Estado")
+                .HasColumnType("integer");
+
+            b.Property<decimal?>("MontoCierre")
+                .HasColumnType("numeric(18,4)");
+
+            b.Property<decimal>("MontoInicial")
+                .HasColumnType("numeric(18,4)");
+
+            b.Property<string>("MotivoDiferencia")
+                .HasMaxLength(500)
+                .HasColumnType("character varying(500)");
+
+            b.Property<Guid>("SucursalId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("AperturaAt");
+
+            b.HasIndex("CajaId");
+
+            b.HasIndex("CajaId", "Estado")
+                .IsUnique()
+                .HasFilter("\"Estado\" = 0");
+
+            b.HasIndex("SucursalId");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("caja_sesiones");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.Categoria", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("IsActive")
+                .HasColumnType("boolean");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(200)
+                .HasColumnType("character varying(200)");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("categorias");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.Marca", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("IsActive")
+                .HasColumnType("boolean");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(200)
+                .HasColumnType("character varying(200)");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("marcas");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.Proveedor", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("IsActive")
+                .HasColumnType("boolean");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(200)
+                .HasColumnType("character varying(200)");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("proveedores");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.Producto", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<Guid?>("CategoriaId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("IsActive")
+                .HasColumnType("boolean");
+
+            b.Property<Guid?>("MarcaId")
+                .HasColumnType("uuid");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.Property<Guid?>("ProveedorId")
+                .HasColumnType("uuid");
+
+            b.Property<string>("Sku")
+                .IsRequired()
+                .HasMaxLength(80)
+                .HasColumnType("character varying(80)");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("CategoriaId");
+
+            b.HasIndex("MarcaId");
+
+            b.HasIndex("ProveedorId");
+
+            b.HasIndex("TenantId");
+
+            b.HasIndex("TenantId", "Sku")
+                .IsUnique();
+
+            b.ToTable("productos");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.ProductoCodigo", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<string>("Codigo")
+                .IsRequired()
+                .HasMaxLength(120)
+                .HasColumnType("character varying(120)");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<Guid>("ProductoId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("ProductoId");
+
+            b.HasIndex("TenantId");
+
+            b.HasIndex("TenantId", "Codigo")
+                .IsUnique();
+
+            b.ToTable("producto_codigos");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.ProductoStockConfig", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<Guid>("ProductoId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("SucursalId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<decimal>("StockMinimo")
+                .HasColumnType("numeric(18,4)");
+
+            b.Property<decimal>("ToleranciaPct")
+                .HasColumnType("numeric(6,2)")
+                .HasDefaultValue(1.25m);
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("SucursalId");
+
+            b.HasIndex("TenantId");
+
+            b.HasIndex("TenantId", "ProductoId", "SucursalId")
+                .IsUnique();
+
+            b.ToTable("producto_stock_config");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.StockSaldo", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<decimal>("CantidadActual")
+                .HasColumnType("numeric(18,4)")
+                .HasDefaultValue(0m);
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<Guid>("ProductoId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("SucursalId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("SucursalId");
+
+            b.HasIndex("TenantId");
+
+            b.HasIndex("TenantId", "ProductoId", "SucursalId")
+                .IsUnique();
+
+            b.ToTable("stock_saldos");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.StockMovimiento", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset>("Fecha")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("Motivo")
+                .IsRequired()
+                .HasMaxLength(500)
+                .HasColumnType("character varying(500)");
+
+            b.Property<Guid>("SucursalId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<int>("Tipo")
+                .HasColumnType("integer");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("Fecha");
+
+            b.HasIndex("SucursalId");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("stock_movimientos");
+        });
+
+        modelBuilder.Entity("Pos.Domain.Entities.StockMovimientoItem", b =>
+        {
+            b.Property<Guid>("Id")
+                .HasColumnType("uuid");
+
+            b.Property<decimal>("Cantidad")
+                .HasColumnType("numeric(18,4)");
+
+            b.Property<DateTimeOffset>("CreatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTimeOffset?>("DeletedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("EsIngreso")
+                .HasColumnType("boolean");
+
+            b.Property<Guid>("MovimientoId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("ProductoId")
+                .HasColumnType("uuid");
+
+            b.Property<Guid>("TenantId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTimeOffset>("UpdatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("MovimientoId");
+
+            b.HasIndex("ProductoId");
+
+            b.HasIndex("TenantId");
+
+            b.ToTable("stock_movimiento_items");
+        });
+
         modelBuilder.Entity("Pos.Domain.Entities.Permission", b =>
         {
             b.Property<Guid>("Id")
