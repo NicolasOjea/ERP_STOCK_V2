@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Pos.Application.Abstractions;
 using Pos.Application.DTOs.Products;
+using Pos.Application.DTOs.Etiquetas;
 using Pos.Domain.Entities;
 using Pos.Domain.Exceptions;
 using Pos.Infrastructure.Persistence;
@@ -50,11 +51,14 @@ public sealed class ProductRepository : IProductRepository
         }
 
         var results = await (from p in query
-                join c in _dbContext.Categorias.AsNoTracking() on p.CategoriaId equals c.Id into cat
+                join c in _dbContext.Categorias.AsNoTracking().Where(c => c.TenantId == tenantId)
+                    on p.CategoriaId equals c.Id into cat
                 from c in cat.DefaultIfEmpty()
-                join m in _dbContext.Marcas.AsNoTracking() on p.MarcaId equals m.Id into mar
+                join m in _dbContext.Marcas.AsNoTracking().Where(m => m.TenantId == tenantId)
+                    on p.MarcaId equals m.Id into mar
                 from m in mar.DefaultIfEmpty()
-                join pr in _dbContext.Proveedores.AsNoTracking() on p.ProveedorId equals pr.Id into prov
+                join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                    on p.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 orderby p.Name
                 select new ProductListItemDto(
@@ -77,11 +81,14 @@ public sealed class ProductRepository : IProductRepository
     {
         var product = await (from p in _dbContext.Productos.AsNoTracking()
                 where p.TenantId == tenantId && p.Id == productId
-                join c in _dbContext.Categorias.AsNoTracking() on p.CategoriaId equals c.Id into cat
+                join c in _dbContext.Categorias.AsNoTracking().Where(c => c.TenantId == tenantId)
+                    on p.CategoriaId equals c.Id into cat
                 from c in cat.DefaultIfEmpty()
-                join m in _dbContext.Marcas.AsNoTracking() on p.MarcaId equals m.Id into mar
+                join m in _dbContext.Marcas.AsNoTracking().Where(m => m.TenantId == tenantId)
+                    on p.MarcaId equals m.Id into mar
                 from m in mar.DefaultIfEmpty()
-                join pr in _dbContext.Proveedores.AsNoTracking() on p.ProveedorId equals pr.Id into prov
+                join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                    on p.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 select new
                 {
@@ -503,6 +510,100 @@ public sealed class ProductRepository : IProductRepository
 
         var nombre = proveedor?.Name ?? string.Empty;
         return new ProductProveedorDto(relation.Id, relation.ProveedorId, nombre, relation.EsPrincipal);
+    }
+
+    public async Task<Guid?> GetIdBySkuAsync(
+        Guid tenantId,
+        string sku,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(sku))
+        {
+            return null;
+        }
+
+        var normalized = sku.Trim();
+        return await _dbContext.Productos.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.Sku == normalized)
+            .Select(p => (Guid?)p.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<Guid?> GetIdByCodeAsync(
+        Guid tenantId,
+        string code,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return null;
+        }
+
+        var normalized = code.Trim();
+        return await _dbContext.ProductoCodigos.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && c.Codigo == normalized)
+            .Select(c => (Guid?)c.ProductoId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<EtiquetaItemDto>> GetLabelDataAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> productIds,
+        string listaPrecio,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = productIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return Array.Empty<EtiquetaItemDto>();
+        }
+
+        var products = await _dbContext.Productos.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && ids.Contains(p.Id))
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Sku,
+                p.PrecioBase
+            })
+            .ToListAsync(cancellationToken);
+
+        var codes = await _dbContext.ProductoCodigos.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && ids.Contains(c.ProductoId))
+            .OrderBy(c => c.Codigo)
+            .Select(c => new { c.ProductoId, c.Codigo })
+            .ToListAsync(cancellationToken);
+
+        var codeByProduct = codes
+            .GroupBy(c => c.ProductoId)
+            .ToDictionary(g => g.Key, g => g.First().Codigo);
+
+        Dictionary<Guid, decimal> prices = new();
+        if (!string.IsNullOrWhiteSpace(listaPrecio))
+        {
+            var lista = await _dbContext.ListasPrecio.AsNoTracking()
+                .FirstOrDefaultAsync(l => l.TenantId == tenantId && l.Nombre == listaPrecio, cancellationToken);
+
+            if (lista is not null)
+            {
+                prices = await _dbContext.ListaPrecioItems.AsNoTracking()
+                    .Where(i => i.TenantId == tenantId && i.ListaPrecioId == lista.Id && ids.Contains(i.ProductoId))
+                    .ToDictionaryAsync(i => i.ProductoId, i => i.Precio, cancellationToken);
+            }
+        }
+
+        var result = products
+            .OrderBy(p => p.Name)
+            .Select(p =>
+            {
+                var codigo = codeByProduct.TryGetValue(p.Id, out var c) ? c : p.Sku;
+                var precio = prices.TryGetValue(p.Id, out var price) ? price : p.PrecioBase;
+                return new EtiquetaItemDto(p.Id, p.Name, precio, codigo);
+            })
+            .ToList();
+
+        return result;
     }
 }
 

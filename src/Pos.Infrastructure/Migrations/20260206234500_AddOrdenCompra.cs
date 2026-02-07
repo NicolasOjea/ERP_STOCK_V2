@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206234500_AddOrdenCompra")]
 public partial class AddOrdenCompra : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -137,3 +139,4 @@ public partial class AddOrdenCompra : Migration
             name: "ordenes_compra");
     }
 }
+

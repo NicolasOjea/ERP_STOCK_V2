@@ -1,27 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj": {}
+    "/src/src/Pos.Domain/Pos.Domain.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj": {
+    "/src/src/Pos.Domain/Pos.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj",
+        "projectUniqueName": "/src/src/Pos.Domain/Pos.Domain.csproj",
         "projectName": "Pos.Domain",
-        "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj",
-        "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\obj\\",
+        "projectPath": "/src/src/Pos.Domain/Pos.Domain.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/src/src/Pos.Domain/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/root/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -60,7 +58,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.417/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

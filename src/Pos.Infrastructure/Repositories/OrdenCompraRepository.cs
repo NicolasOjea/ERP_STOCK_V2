@@ -85,7 +85,8 @@ public sealed class OrdenCompraRepository : IOrdenCompraRepository
     {
         var query = from o in _dbContext.OrdenesCompra.AsNoTracking()
             where o.TenantId == tenantId && o.SucursalId == sucursalId
-            join pr in _dbContext.Proveedores.AsNoTracking() on o.ProveedorId equals pr.Id into prov
+            join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                on o.ProveedorId equals pr.Id into prov
             from pr in prov.DefaultIfEmpty()
             select new OrdenCompraListItemDto(
                 o.Id,
@@ -108,7 +109,8 @@ public sealed class OrdenCompraRepository : IOrdenCompraRepository
     {
         var orden = await (from o in _dbContext.OrdenesCompra.AsNoTracking()
                 where o.TenantId == tenantId && o.SucursalId == sucursalId && o.Id == ordenCompraId
-                join pr in _dbContext.Proveedores.AsNoTracking() on o.ProveedorId equals pr.Id into prov
+                join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                    on o.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 select new
                 {

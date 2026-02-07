@@ -13,6 +13,12 @@ using Pos.Application.UseCases.DocumentosCompra;
 using Pos.Application.UseCases.PreRecepciones;
 using Pos.Application.UseCases.ListasPrecio;
 using Pos.Application.UseCases.Pricing;
+using Pos.Application.UseCases.Devoluciones;
+using Pos.Application.UseCases.Importaciones;
+using Pos.Application.UseCases.Etiquetas;
+using Pos.Application.UseCases.Auditoria;
+using Pos.Application.UseCases.Reportes;
+using Pos.Application.UseCases.Comprobantes;
 using Pos.Application.UseCases.Pricing.Strategies;
 
 namespace Pos.Application.Common;
@@ -33,6 +39,12 @@ public static class DependencyInjection
         services.AddScoped<DocumentoCompraService>();
         services.AddScoped<PreRecepcionService>();
         services.AddScoped<ListaPrecioService>();
+        services.AddScoped<DevolucionService>();
+        services.AddScoped<ImportacionProductosService>();
+        services.AddScoped<EtiquetasService>();
+        services.AddScoped<AuditoriaService>();
+        services.AddScoped<ReportesService>();
+        services.AddScoped<ComprobantesService>();
         services.AddScoped<IPromoStrategy, PorcCategoriaPromoStrategy>();
         services.AddScoped<IPromoStrategy, DosPorUnoPromoStrategy>();
         services.AddScoped<IPromoStrategy, ComboPromoStrategy>();

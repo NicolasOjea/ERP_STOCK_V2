@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206213500_AddProveedores")]
 public partial class AddProveedores : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -75,3 +77,4 @@ public partial class AddProveedores : Migration
             name: "proveedores");
     }
 }
+

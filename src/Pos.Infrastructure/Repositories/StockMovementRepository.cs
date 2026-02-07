@@ -162,7 +162,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
             var pid = productoId.Value;
             movimientosQuery = movimientosQuery.Where(m =>
                 _dbContext.StockMovimientoItems.AsNoTracking()
-                    .Any(i => i.MovimientoId == m.Id && i.ProductoId == pid));
+                    .Any(i => i.TenantId == tenantId && i.MovimientoId == m.Id && i.ProductoId == pid));
         }
 
         var movimientos = await movimientosQuery
@@ -177,7 +177,8 @@ public sealed class StockMovementRepository : IStockMovementRepository
         var movimientoIds = movimientos.Select(m => m.Id).ToList();
 
         var items = await (from i in _dbContext.StockMovimientoItems.AsNoTracking()
-                join p in _dbContext.Productos.AsNoTracking() on i.ProductoId equals p.Id
+                join p in _dbContext.Productos.AsNoTracking().Where(p => p.TenantId == tenantId)
+                    on i.ProductoId equals p.Id
                 where i.TenantId == tenantId && movimientoIds.Contains(i.MovimientoId)
                 select new
                 {

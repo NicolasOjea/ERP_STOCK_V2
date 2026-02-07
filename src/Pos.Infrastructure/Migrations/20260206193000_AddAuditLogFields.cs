@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206193000_AddAuditLogFields")]
 public partial class AddAuditLogFields : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,3 +88,4 @@ public partial class AddAuditLogFields : Migration
             nullable: true);
     }
 }
+

@@ -1,35 +1,33 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj": {}
+    "/src/src/Pos.WebApi/Pos.WebApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj": {
+    "/src/src/Pos.Application/Pos.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj",
+        "projectUniqueName": "/src/src/Pos.Application/Pos.Application.csproj",
         "projectName": "Pos.Application",
-        "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj",
-        "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\obj\\",
+        "projectPath": "/src/src/Pos.Application/Pos.Application.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/src/src/Pos.Application/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/root/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj": {
-                "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj"
+              "/src/src/Pos.Domain/Pos.Domain.csproj": {
+                "projectPath": "/src/src/Pos.Domain/Pos.Domain.csproj"
               }
             }
           }
@@ -48,6 +46,12 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -64,28 +68,26 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.417/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj": {
+    "/src/src/Pos.Domain/Pos.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj",
+        "projectUniqueName": "/src/src/Pos.Domain/Pos.Domain.csproj",
         "projectName": "Pos.Domain",
-        "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj",
-        "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\obj\\",
+        "projectPath": "/src/src/Pos.Domain/Pos.Domain.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/src/src/Pos.Domain/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/root/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -124,39 +126,37 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.417/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj": {
+    "/src/src/Pos.Infrastructure/Pos.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj",
+        "projectUniqueName": "/src/src/Pos.Infrastructure/Pos.Infrastructure.csproj",
         "projectName": "Pos.Infrastructure",
-        "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\obj\\",
+        "projectPath": "/src/src/Pos.Infrastructure/Pos.Infrastructure.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/src/src/Pos.Infrastructure/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/root/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj": {
-                "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj"
+              "/src/src/Pos.Application/Pos.Application.csproj": {
+                "projectPath": "/src/src/Pos.Application/Pos.Application.csproj"
               },
-              "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj": {
-                "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj"
+              "/src/src/Pos.Domain/Pos.Domain.csproj": {
+                "projectPath": "/src/src/Pos.Domain/Pos.Domain.csproj"
               }
             }
           }
@@ -210,39 +210,37 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.417/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj": {
+    "/src/src/Pos.WebApi/Pos.WebApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj",
+        "projectUniqueName": "/src/src/Pos.WebApi/Pos.WebApi.csproj",
         "projectName": "Pos.WebApi",
-        "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj",
-        "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\obj\\",
+        "projectPath": "/src/src/Pos.WebApi/Pos.WebApi.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/src/src/Pos.WebApi/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/root/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj": {
-                "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj"
+              "/src/src/Pos.Application/Pos.Application.csproj": {
+                "projectPath": "/src/src/Pos.Application/Pos.Application.csproj"
               },
-              "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj": {
-                "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj"
+              "/src/src/Pos.Infrastructure/Pos.Infrastructure.csproj": {
+                "projectPath": "/src/src/Pos.Infrastructure/Pos.Infrastructure.csproj"
               }
             }
           }
@@ -261,6 +259,21 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.6, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.6, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[7.6.4, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -280,7 +293,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.417/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

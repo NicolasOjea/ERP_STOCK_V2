@@ -63,13 +63,16 @@ public sealed class AuthRepository : IAuthRepository
 
         var roles = await (from ur in _dbContext.UsuarioRoles.AsNoTracking()
             join r in _dbContext.Roles.AsNoTracking() on ur.RoleId equals r.Id
-            where ur.TenantId == user.TenantId && ur.UserId == user.Id
+            where ur.TenantId == user.TenantId && ur.UserId == user.Id && r.TenantId == user.TenantId
             select r.Name).Distinct().ToListAsync(cancellationToken);
 
         var permissions = await (from ur in _dbContext.UsuarioRoles.AsNoTracking()
             join rp in _dbContext.RolPermisos.AsNoTracking() on ur.RoleId equals rp.RoleId
             join p in _dbContext.Permisos.AsNoTracking() on rp.PermissionId equals p.Id
-            where ur.TenantId == user.TenantId && ur.UserId == user.Id
+            where ur.TenantId == user.TenantId
+                  && ur.UserId == user.Id
+                  && rp.TenantId == user.TenantId
+                  && p.TenantId == user.TenantId
             select p.Code).Distinct().ToListAsync(cancellationToken);
 
         return new LoginUserDto(

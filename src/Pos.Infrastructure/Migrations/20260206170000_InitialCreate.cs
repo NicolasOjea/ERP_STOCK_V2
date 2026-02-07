@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206170000_InitialCreate")]
 public partial class InitialCreate : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -468,4 +470,5 @@ public partial class InitialCreate : Migration
             name: "tenants");
     }
 }
+
 

@@ -48,7 +48,9 @@ public sealed class PreRecepcionRepository : IPreRecepcionRepository
 
         var codeMatches = await (from c in _dbContext.ProductoCodigos.AsNoTracking()
                 join p in _dbContext.Productos.AsNoTracking() on c.ProductoId equals p.Id
-                where c.TenantId == tenantId && codes.Contains(c.Codigo)
+                where c.TenantId == tenantId
+                      && p.TenantId == tenantId
+                      && codes.Contains(c.Codigo)
                 select new
                 {
                     c.Codigo,
@@ -131,7 +133,8 @@ public sealed class PreRecepcionRepository : IPreRecepcionRepository
         }
 
         var items = await (from i in _dbContext.PreRecepcionItems.AsNoTracking()
-                join p in _dbContext.Productos.AsNoTracking() on i.ProductoId equals p.Id into prod
+                join p in _dbContext.Productos.AsNoTracking().Where(p => p.TenantId == tenantId)
+                    on i.ProductoId equals p.Id into prod
                 from p in prod.DefaultIfEmpty()
                 where i.TenantId == tenantId && i.PreRecepcionId == preRecepcionId
                 orderby i.Codigo

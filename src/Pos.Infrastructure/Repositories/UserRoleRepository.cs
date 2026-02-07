@@ -23,9 +23,9 @@ public sealed class UserRoleRepository : IUserRoleRepository
     public async Task<IReadOnlyList<string>> GetUserRoleNamesAsync(Guid tenantId, Guid userId, CancellationToken cancellationToken = default)
     {
         return await (from ur in _dbContext.UsuarioRoles.AsNoTracking()
-                join role in _dbContext.Roles.AsNoTracking() on ur.RoleId equals role.Id
-                where ur.TenantId == tenantId && ur.UserId == userId
-                select role.Name)
+            join role in _dbContext.Roles.AsNoTracking() on ur.RoleId equals role.Id
+            where ur.TenantId == tenantId && ur.UserId == userId && role.TenantId == tenantId
+            select role.Name)
             .Distinct()
             .ToListAsync(cancellationToken);
     }

@@ -6,6 +6,8 @@ using Pos.Infrastructure.Persistence;
 using Pos.Infrastructure.Repositories;
 using Pos.Infrastructure.Security;
 using Pos.Infrastructure.Services;
+using Pos.Infrastructure.Adapters.Pdf;
+using Pos.Infrastructure.Adapters.Fiscal;
 
 namespace Pos.Infrastructure;
 
@@ -35,6 +37,12 @@ public static class DependencyInjection
         services.AddScoped<IDocumentParser, Adapters.JsonDocumentParser>();
         services.AddScoped<IRecepcionRepository, RecepcionRepository>();
         services.AddScoped<IListaPrecioRepository, ListaPrecioRepository>();
+        services.AddScoped<IDevolucionRepository, DevolucionRepository>();
+        services.AddScoped<IEtiquetaPdfGenerator, EtiquetaPdfGenerator>();
+        services.AddScoped<IAuditLogQueryRepository, AuditLogQueryRepository>();
+        services.AddScoped<IReportesRepository, ReportesRepository>();
+        services.AddScoped<IFiscalProvider, DummyFiscalProvider>();
+        services.AddScoped<IComprobanteRepository, ComprobanteRepository>();
         services.AddSingleton<IPasswordHasher, Sha256PasswordHasher>();
         return services;
     }

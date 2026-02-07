@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206241000_AddDocumentosCompraPreRecepcion")]
 public partial class AddDocumentosCompraPreRecepcion : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -262,3 +264,4 @@ public partial class AddDocumentosCompraPreRecepcion : Migration
             name: "documentos_compra");
     }
 }
+

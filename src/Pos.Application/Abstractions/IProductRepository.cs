@@ -53,4 +53,20 @@ public interface IProductRepository
         Guid relationId,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
+
+    Task<Guid?> GetIdBySkuAsync(
+        Guid tenantId,
+        string sku,
+        CancellationToken cancellationToken = default);
+
+    Task<Guid?> GetIdByCodeAsync(
+        Guid tenantId,
+        string code,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DTOs.Etiquetas.EtiquetaItemDto>> GetLabelDataAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> productIds,
+        string listaPrecio,
+        CancellationToken cancellationToken = default);
 }

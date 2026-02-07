@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206220000_AddCajaTables")]
 public partial class AddCajaTables : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -185,3 +187,4 @@ public partial class AddCajaTables : Migration
             name: "cajas");
     }
 }
+

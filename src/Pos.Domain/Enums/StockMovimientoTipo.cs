@@ -6,5 +6,6 @@ public enum StockMovimientoTipo
     Merma = 2,
     SalidaVenta = 3,
     EntradaAnulacion = 4,
-    EntradaCompra = 5
+    EntradaCompra = 5,
+    EntradaDevolucion = 6
 }

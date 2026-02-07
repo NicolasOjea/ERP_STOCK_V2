@@ -40,6 +40,25 @@ Sample endpoints:
 - `GET /api/v1/health` -> returns status `ok`
 - `POST /api/v1/auth/login` -> returns `{ token, expiresAt }`
 
+## Frontend (Vue + Vuetify)
+From the repo root:
+```bash
+cd frontend/pos-ui
+npm install
+```
+
+Run dev server:
+```bash
+npm run dev
+```
+
+API base URL (optional):
+```bash
+set VITE_API_BASE_URL=http://localhost:8080
+```
+
+Login at `http://localhost:5173/login`.
+
 ## Docker Compose
 Start:
 ```bash

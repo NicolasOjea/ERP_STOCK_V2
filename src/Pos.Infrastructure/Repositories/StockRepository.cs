@@ -143,11 +143,13 @@ public sealed class StockRepository : IStockRepository
         CancellationToken cancellationToken = default)
     {
         var configs = await (from c in _dbContext.ProductoStockConfigs.AsNoTracking()
-                join p in _dbContext.Productos.AsNoTracking() on c.ProductoId equals p.Id
+                join p in _dbContext.Productos.AsNoTracking().Where(p => p.TenantId == tenantId)
+                    on c.ProductoId equals p.Id
                 join pp in _dbContext.ProductoProveedores.AsNoTracking()
                     on new { p.Id, p.TenantId } equals new { Id = pp.ProductoId, pp.TenantId } into ppJoin
                 from pp in ppJoin.Where(x => x.EsPrincipal).DefaultIfEmpty()
-                join pr in _dbContext.Proveedores.AsNoTracking() on pp.ProveedorId equals pr.Id into prov
+                join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                    on pp.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 join s in _dbContext.StockSaldos.AsNoTracking()
                     on new { c.ProductoId, c.TenantId, c.SucursalId }
@@ -159,7 +161,7 @@ public sealed class StockRepository : IStockRepository
                     p.Id,
                     p.Name,
                     p.Sku,
-                    ProveedorId = pp != null ? pp.ProveedorId : null,
+                    ProveedorId = pp != null ? (Guid?)pp.ProveedorId : null,
                     Proveedor = pr != null ? pr.Name : null,
                     StockActual = saldo != null ? saldo.CantidadActual : 0m,
                     c.StockMinimo,
@@ -200,11 +202,13 @@ public sealed class StockRepository : IStockRepository
         CancellationToken cancellationToken = default)
     {
         var configs = await (from c in _dbContext.ProductoStockConfigs.AsNoTracking()
-                join p in _dbContext.Productos.AsNoTracking() on c.ProductoId equals p.Id
+                join p in _dbContext.Productos.AsNoTracking().Where(p => p.TenantId == tenantId)
+                    on c.ProductoId equals p.Id
                 join pp in _dbContext.ProductoProveedores.AsNoTracking()
                     on new { p.Id, p.TenantId } equals new { Id = pp.ProductoId, pp.TenantId } into ppJoin
                 from pp in ppJoin.Where(x => x.EsPrincipal).DefaultIfEmpty()
-                join pr in _dbContext.Proveedores.AsNoTracking() on pp.ProveedorId equals pr.Id into prov
+                join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                    on pp.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 join s in _dbContext.StockSaldos.AsNoTracking()
                     on new { c.ProductoId, c.TenantId, c.SucursalId }
@@ -216,7 +220,7 @@ public sealed class StockRepository : IStockRepository
                     p.Id,
                     p.Name,
                     p.Sku,
-                    ProveedorId = pp != null ? pp.ProveedorId : null,
+                    ProveedorId = pp != null ? (Guid?)pp.ProveedorId : null,
                     Proveedor = pr != null ? pr.Name : null,
                     StockActual = saldo != null ? saldo.CantidadActual : 0m,
                     c.StockMinimo,
@@ -228,7 +232,7 @@ public sealed class StockRepository : IStockRepository
             .Where(x => x.StockActual <= x.StockMinimo * x.ToleranciaPct)
             .ToList();
 
-        if (candidates.Count == 0)
+        if (!candidates.Any())
         {
             return new StockSugeridoCompraDto(0m, 0, Array.Empty<StockSugeridoProveedorDto>());
         }
@@ -269,7 +273,7 @@ public sealed class StockRepository : IStockRepository
                     g.Key.ProveedorId,
                     g.Key.Proveedor,
                     list.Sum(i => i.Sugerido),
-                    list.Count,
+                    list.Count(),
                     list);
             })
             .OrderBy(g => g.Proveedor)

@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "RjEYyZARXGU=",
+  "dgSpecHash": "29NBtzTPYpQ=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "/src/src/Pos.Application/Pos.Application.csproj",
+  "expectedPackageFiles": [
+    "/root/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512"
+  ],
   "logs": []
 }

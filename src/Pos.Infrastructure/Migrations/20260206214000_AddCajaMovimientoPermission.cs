@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206214000_AddCajaMovimientoPermission")]
 public partial class AddCajaMovimientoPermission : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -71,3 +73,4 @@ public partial class AddCajaMovimientoPermission : Migration
             keyValue: new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a016"));
     }
 }
+

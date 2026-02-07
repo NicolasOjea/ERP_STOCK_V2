@@ -6,13 +6,14 @@
   "libraries": {},
   "projectFileDependencyGroups": {
     "net8.0": [
+      "Microsoft.AspNetCore.Mvc.Testing >= 8.0.6",
       "Microsoft.NET.Test.Sdk >= 17.11.1",
       "xunit >= 2.6.6",
       "xunit.runner.visualstudio >= 2.5.6"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\": {}
+    "C:\\Users\\Usuario\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
@@ -20,7 +21,7 @@
       "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\tests\\Pos.Tests\\Pos.Tests.csproj",
       "projectName": "Pos.Tests",
       "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\tests\\Pos.Tests\\Pos.Tests.csproj",
-      "packagesPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\.dotnet\\.nuget\\packages\\",
+      "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\tests\\Pos.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
@@ -40,6 +41,9 @@
           "projectReferences": {
             "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj": {
               "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Infrastructure\\Pos.Infrastructure.csproj"
+            },
+            "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj": {
+              "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.WebApi\\Pos.WebApi.csproj"
             }
           }
         }
@@ -59,6 +63,10 @@
       "net8.0": {
         "targetAlias": "net8.0",
         "dependencies": {
+          "Microsoft.AspNetCore.Mvc.Testing": {
+            "target": "Package",
+            "version": "[8.0.6, )"
+          },
           "Microsoft.NET.Test.Sdk": {
             "target": "Package",
             "version": "[17.11.1, )"
@@ -97,13 +105,25 @@
     {
       "code": "NU1301",
       "level": "Error",
-      "message": "No se pudo recuperar información sobre \"xunit.runner.visualstudio\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/xunit.runner.visualstudio/index.json\".",
+      "message": "No se puede cargar el índice de servicio del origen https://api.nuget.org/v3/index.json.",
       "libraryId": "xunit.runner.visualstudio"
     },
     {
       "code": "NU1301",
       "level": "Error",
-      "message": "No se pudo recuperar información sobre \"Microsoft.NET.Test.Sdk\" del origen remoto \"https://api.nuget.org/v3-flatcontainer/microsoft.net.test.sdk/index.json\".",
+      "message": "No se puede cargar el índice de servicio del origen https://api.nuget.org/v3/index.json.",
+      "libraryId": "xunit"
+    },
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se puede cargar el índice de servicio del origen https://api.nuget.org/v3/index.json.",
+      "libraryId": "Microsoft.AspNetCore.Mvc.Testing"
+    },
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "No se puede cargar el índice de servicio del origen https://api.nuget.org/v3/index.json.",
       "libraryId": "Microsoft.NET.Test.Sdk"
     }
   ]

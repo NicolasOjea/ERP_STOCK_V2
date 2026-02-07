@@ -31,7 +31,7 @@ public sealed class AuditLogService : IAuditLogService
         }
 
         var now = DateTimeOffset.UtcNow;
-        var userId = _requestContext.UserId == Guid.Empty ? null : _requestContext.UserId;
+        Guid? userId = _requestContext.UserId == Guid.Empty ? (Guid?)null : _requestContext.UserId;
 
         var audit = new AuditLog(
             Guid.NewGuid(),

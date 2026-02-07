@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206250000_AddListasPrecioAndPrecios")]
 public partial class AddListasPrecioAndPrecios : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -132,3 +134,4 @@ public partial class AddListasPrecioAndPrecios : Migration
             table: "venta_items");
     }
 }
+

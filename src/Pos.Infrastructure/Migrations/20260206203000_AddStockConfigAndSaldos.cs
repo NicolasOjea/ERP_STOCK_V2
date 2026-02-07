@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Pos.Infrastructure.Migrations;
 
+[Microsoft.EntityFrameworkCore.Infrastructure.DbContext(typeof(Pos.Infrastructure.Persistence.PosDbContext))]
+[Migration("20260206203000_AddStockConfigAndSaldos")]
 public partial class AddStockConfigAndSaldos : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -134,3 +136,4 @@ public partial class AddStockConfigAndSaldos : Migration
             name: "stock_saldos");
     }
 }
+
