@@ -83,6 +83,15 @@ public static class SeedData
         new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c15"), TenantId, RoleAdminId, Permissions[13].Id, SeedTimestamp),
         new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c16"), TenantId, RoleAdminId, Permissions[14].Id, SeedTimestamp),
         new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c17"), TenantId, RoleEncargadoId, Permissions[15].Id, SeedTimestamp),
-        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c18"), TenantId, RoleAdminId, Permissions[15].Id, SeedTimestamp)
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c18"), TenantId, RoleAdminId, Permissions[15].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c19"), TenantId, RoleAdminId, Permissions[0].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1a"), TenantId, RoleAdminId, Permissions[1].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1b"), TenantId, RoleAdminId, Permissions[2].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1c"), TenantId, RoleAdminId, Permissions[3].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1d"), TenantId, RoleAdminId, Permissions[4].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1e"), TenantId, RoleAdminId, Permissions[5].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1f"), TenantId, RoleAdminId, Permissions[6].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c20"), TenantId, RoleAdminId, Permissions[7].Id, SeedTimestamp),
+        new RolePermission(Guid.Parse("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c21"), TenantId, RoleAdminId, Permissions[8].Id, SeedTimestamp)
     ];
 }

@@ -7,4 +7,5 @@ public sealed record ProductUpdateDto(
     Guid? MarcaId,
     Guid? ProveedorId,
     bool? IsActive,
-    decimal? PrecioBase);
+    decimal? PrecioBase,
+    decimal? PrecioVenta);

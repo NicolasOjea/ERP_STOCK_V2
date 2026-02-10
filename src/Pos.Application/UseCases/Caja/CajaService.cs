@@ -22,6 +22,81 @@ public sealed class CajaService
         _auditLogService = auditLogService;
     }
 
+    public async Task<IReadOnlyList<CajaDto>> GetCajasAsync(
+        bool? activo,
+        CancellationToken cancellationToken)
+    {
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+        return await _cajaRepository.GetCajasAsync(tenantId, sucursalId, activo, cancellationToken);
+    }
+
+    public async Task<CajaDto> CreateCajaAsync(CajaCreateDto request, CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["request"] = new[] { "El request es obligatorio." }
+                });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Nombre))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["nombre"] = new[] { "El nombre es obligatorio." }
+                });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Numero))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["numero"] = new[] { "El numero es obligatorio." }
+                });
+        }
+
+        if (!request.Numero.All(char.IsDigit))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["numero"] = new[] { "El numero debe contener solo digitos." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+        var now = DateTimeOffset.UtcNow;
+
+        var normalized = request with
+        {
+            Nombre = request.Nombre.Trim(),
+            Numero = request.Numero.Trim()
+        };
+
+        var created = await _cajaRepository.CreateCajaAsync(tenantId, sucursalId, normalized, now, cancellationToken);
+
+        await _auditLogService.LogAsync(
+            "Caja",
+            created.Id.ToString(),
+            AuditAction.Create,
+            null,
+            System.Text.Json.JsonSerializer.Serialize(created),
+            null,
+            cancellationToken);
+
+        return created;
+    }
+
     public async Task<CajaSesionDto> AbrirSesionAsync(CajaSesionAbrirDto request, CancellationToken cancellationToken)
     {
         if (request is null)

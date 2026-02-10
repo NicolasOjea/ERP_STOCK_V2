@@ -24,13 +24,14 @@ public sealed class ProductTests : IClassFixture<WebApiFactory>
         var token = _factory.CreateTokenWithPermissions(PermissionCodes.ProductoEditar, PermissionCodes.ProductoVer);
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        var proveedorId = await TestData.CreateProveedorAsync(client);
         var sku = $"SKU-{Guid.NewGuid():N}";
         var response = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto {Guid.NewGuid():N}",
             sku,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -49,13 +50,14 @@ public sealed class ProductTests : IClassFixture<WebApiFactory>
         var token = _factory.CreateTokenWithPermissions(PermissionCodes.ProductoEditar, PermissionCodes.ProductoVer);
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        var proveedorId = await TestData.CreateProveedorAsync(client);
         var sku = $"SKU-{Guid.NewGuid():N}";
         var createResponse = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto {Guid.NewGuid():N}",
             sku,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
@@ -87,13 +89,14 @@ public sealed class ProductTests : IClassFixture<WebApiFactory>
         var token = _factory.CreateTokenWithPermissions(PermissionCodes.ProductoEditar, PermissionCodes.ProductoVer);
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        var proveedorId = await TestData.CreateProveedorAsync(client);
         var sku = $"SKU-{Guid.NewGuid():N}";
         var createResponse = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto {Guid.NewGuid():N}",
             sku,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);

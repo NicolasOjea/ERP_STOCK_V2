@@ -96,13 +96,14 @@ public sealed class VentaAnularTests : IClassFixture<WebApiFactory>
     {
         var code = $"CODE-{Guid.NewGuid():N}";
         var sku = $"SKU-{Guid.NewGuid():N}";
+        var proveedorId = await TestData.CreateProveedorAsync(client);
 
         var createResponse = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto {Guid.NewGuid():N}",
             sku,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
@@ -160,7 +161,13 @@ public sealed class VentaAnularTests : IClassFixture<WebApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<PosDbContext>();
-        var caja = new Caja(Guid.NewGuid(), SeedData.TenantId, SeedData.SucursalId, $"Caja {Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        var caja = new Caja(
+            Guid.NewGuid(),
+            SeedData.TenantId,
+            SeedData.SucursalId,
+            $"Caja {Guid.NewGuid():N}",
+            Random.Shared.Next(1000, 999999).ToString(),
+            DateTimeOffset.UtcNow);
         db.Cajas.Add(caja);
         await db.SaveChangesAsync();
         return caja.Id;

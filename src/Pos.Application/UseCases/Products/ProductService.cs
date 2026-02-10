@@ -106,13 +106,13 @@ public sealed class ProductService
                 });
         }
 
-        if (request.ProveedorId.HasValue && request.ProveedorId.Value == Guid.Empty)
+        if (!request.ProveedorId.HasValue || request.ProveedorId.Value == Guid.Empty)
         {
             throw new ValidationException(
                 "Validacion fallida.",
                 new Dictionary<string, string[]>
                 {
-                    ["proveedorId"] = new[] { "El proveedor es invalido." }
+                    ["proveedorId"] = new[] { "El proveedor es obligatorio." }
                 });
         }
 
@@ -123,6 +123,16 @@ public sealed class ProductService
                 new Dictionary<string, string[]>
                 {
                     ["precioBase"] = new[] { "El precio base no puede ser negativo." }
+                });
+        }
+
+        if (request.PrecioVenta.HasValue && request.PrecioVenta.Value < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["precioVenta"] = new[] { "El precio de venta no puede ser negativo." }
                 });
         }
 
@@ -182,7 +192,8 @@ public sealed class ProductService
             || request.MarcaId is not null
             || request.ProveedorId is not null
             || request.IsActive is not null
-            || request.PrecioBase is not null;
+            || request.PrecioBase is not null
+            || request.PrecioVenta is not null;
 
         if (!hasAnyChange)
         {
@@ -251,6 +262,16 @@ public sealed class ProductService
                 new Dictionary<string, string[]>
                 {
                     ["precioBase"] = new[] { "El precio base no puede ser negativo." }
+                });
+        }
+
+        if (request.PrecioVenta.HasValue && request.PrecioVenta.Value < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["precioVenta"] = new[] { "El precio de venta no puede ser negativo." }
                 });
         }
 

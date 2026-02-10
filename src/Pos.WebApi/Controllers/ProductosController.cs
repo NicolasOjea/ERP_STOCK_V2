@@ -122,4 +122,13 @@ public sealed class ProductosController : ControllerBase
         var config = await _stockService.UpdateStockConfigAsync(id, request, cancellationToken);
         return Ok(config);
     }
+
+    [HttpGet("{id:guid}/stock-config")]
+    [Authorize(Policy = "PERM_STOCK_AJUSTAR")]
+    [ProducesResponseType(typeof(StockConfigDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<StockConfigDto>> GetStockConfig(Guid id, CancellationToken cancellationToken)
+    {
+        var config = await _stockService.GetStockConfigAsync(id, cancellationToken);
+        return Ok(config);
+    }
 }

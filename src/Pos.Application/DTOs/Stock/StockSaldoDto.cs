@@ -4,4 +4,5 @@ public sealed record StockSaldoDto(
     Guid ProductoId,
     string Nombre,
     string Sku,
+    string Codigo,
     decimal CantidadActual);

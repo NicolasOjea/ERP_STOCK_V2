@@ -24,17 +24,56 @@
     <v-row dense>
       <v-col cols="12" md="6">
         <v-card class="pos-card pa-4 mb-4">
+          <div class="text-h6">Crear caja</div>
+          <div class="text-caption text-medium-emphasis">Alta de caja por cajero</div>
+          <v-divider class="my-3" />
+
+          <v-form @submit.prevent="crearCaja">
+            <v-text-field
+              v-model="nuevaCajaNumero"
+              label="Numero de caja"
+              variant="outlined"
+              density="comfortable"
+              :error-messages="crearCajaErrors.numero"
+              required
+            />
+            <v-text-field
+              v-model="nuevaCajaNombre"
+              label="Nombre de cajero"
+              variant="outlined"
+              density="comfortable"
+              :error-messages="crearCajaErrors.nombre"
+              required
+            />
+            <v-btn
+              color="primary"
+              size="large"
+              class="text-none"
+              type="submit"
+              :loading="crearCajaLoading"
+            >
+              Crear caja
+            </v-btn>
+          </v-form>
+        </v-card>
+
+        <v-card class="pos-card pa-4 mb-4">
           <div class="text-h6">Apertura</div>
           <div class="text-caption text-medium-emphasis">Iniciar sesion de caja</div>
           <v-divider class="my-3" />
 
           <v-form @submit.prevent="abrirCaja">
-            <v-text-field
+            <v-autocomplete
               v-model="cajaId"
-              label="Caja Id"
+              :items="cajas"
+              item-title="label"
+              item-value="id"
+              label="Caja (cajero)"
               variant="outlined"
               density="comfortable"
+              :loading="cajasLoading"
               :disabled="isAbierta"
+              clearable
               required
             />
             <v-text-field
@@ -319,6 +358,15 @@ const resumen = ref(null);
 const cierreResult = ref(null);
 
 const cajaId = ref('');
+const cajas = ref([]);
+const cajasLoading = ref(false);
+const nuevaCajaNumero = ref('');
+const nuevaCajaNombre = ref('');
+const crearCajaLoading = ref(false);
+const crearCajaErrors = ref({
+  numero: '',
+  nombre: ''
+});
 const montoInicial = ref(0);
 
 const movimiento = ref({
@@ -429,6 +477,72 @@ const extractProblemMessage = (data) => {
   return data.detail || data.title || 'Error inesperado.';
 };
 
+const mapCajas = (items) =>
+  (items || []).map((item) => {
+    const numero = item.numero || shortId(item.id);
+    return {
+      ...item,
+      label: `${numero} - ${item.nombre}`
+    };
+  });
+
+const loadCajas = async () => {
+  cajasLoading.value = true;
+  try {
+    const { response, data } = await getJson('/api/v1/caja?activo=true');
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+    cajas.value = mapCajas(data || []);
+  } catch (err) {
+    flash('error', err?.message || 'No se pudieron cargar cajas.');
+  } finally {
+    cajasLoading.value = false;
+  }
+};
+
+const validarCrearCaja = () => {
+  crearCajaErrors.value = { numero: '', nombre: '' };
+  if (!nuevaCajaNumero.value.trim()) {
+    crearCajaErrors.value.numero = 'El numero es obligatorio.';
+  } else if (!/^\d+$/.test(nuevaCajaNumero.value.trim())) {
+    crearCajaErrors.value.numero = 'El numero debe ser solo digitos.';
+  }
+  if (!nuevaCajaNombre.value.trim()) {
+    crearCajaErrors.value.nombre = 'El nombre es obligatorio.';
+  }
+  return !crearCajaErrors.value.numero && !crearCajaErrors.value.nombre;
+};
+
+const crearCaja = async () => {
+  if (crearCajaLoading.value) return;
+  if (!validarCrearCaja()) return;
+
+  crearCajaLoading.value = true;
+  try {
+    const payload = {
+      numero: nuevaCajaNumero.value.trim(),
+      nombre: nuevaCajaNombre.value.trim(),
+      isActive: true
+    };
+
+    const { response, data } = await postJson('/api/v1/caja', payload);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+
+    nuevaCajaNumero.value = '';
+    nuevaCajaNombre.value = '';
+    await loadCajas();
+    cajaId.value = data.id;
+    flash('success', 'Caja creada');
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo crear la caja.');
+  } finally {
+    crearCajaLoading.value = false;
+  }
+};
+
 const saveSession = () => {
   if (!session.value) return;
   localStorage.setItem('pos-caja-session', JSON.stringify(session.value));
@@ -468,6 +582,10 @@ const cargarResumen = async () => {
 
 const abrirCaja = async () => {
   if (openLoading.value || isAbierta.value) return;
+  if (!cajaId.value) {
+    flash('error', 'Selecciona una caja.');
+    return;
+  }
   openLoading.value = true;
   try {
     const payload = {
@@ -578,6 +696,7 @@ const printTicket = () => {
 
 onMounted(() => {
   loadSession();
+  loadCajas();
   if (session.value) {
     cargarResumen();
   }

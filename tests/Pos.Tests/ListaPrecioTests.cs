@@ -29,6 +29,8 @@ public sealed class ListaPrecioTests : IClassFixture<WebApiFactory>
             PermissionCodes.VentaCrear);
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        await TestData.OpenCajaSessionAsync(client);
+
         var listResponse = await client.GetAsync("/api/v1/listas-precio");
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
         var listas = await listResponse.Content.ReadFromJsonAsync<List<ListaPrecioDto>>();
@@ -43,13 +45,14 @@ public sealed class ListaPrecioTests : IClassFixture<WebApiFactory>
             Assert.NotNull(lista);
         }
 
+        var proveedorId = await TestData.CreateProveedorAsync(client);
         var sku = $"SKU-{Guid.NewGuid():N}";
         var productResponse = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto {Guid.NewGuid():N}",
             sku,
             null,
             null,
-            null,
+            proveedorId,
             true,
             1m));
 

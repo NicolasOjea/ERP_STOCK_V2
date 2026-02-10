@@ -1216,6 +1216,12 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<decimal>("StockMinimo")
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<decimal>("StockDeseado")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnName("stockdeseado")
+                        .HasColumnType("numeric(18,4)")
+                        .HasDefaultValue(0m);
+
                     b.Property<Guid>("SucursalId")
                         .HasColumnType("uuid");
 
@@ -1225,7 +1231,7 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<decimal>("ToleranciaPct")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(6,2)")
-                        .HasDefaultValue(1.25m);
+                        .HasDefaultValue(25m);
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1629,6 +1635,87 @@ namespace Pos.Infrastructure.MigrationsNew
                             Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c18"),
                             CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a016"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c19"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a001"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1a"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a002"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1b"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a003"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1c"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a004"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1d"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a005"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1e"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a006"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c1f"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a007"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c20"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a008"),
+                            RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
+                            TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
+                            UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c21"),
+                            CreatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            PermissionId = new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a009"),
                             RoleId = new Guid("e1c5d7b9-6a28-4c79-8d1f-7d1b0f2e3a03"),
                             TenantId = new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
                             UpdatedAt = new DateTimeOffset(new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))

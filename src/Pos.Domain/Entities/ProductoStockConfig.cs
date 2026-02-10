@@ -14,6 +14,7 @@ public sealed class ProductoStockConfig : EntityBase
         Guid productoId,
         Guid sucursalId,
         decimal stockMinimo,
+        decimal stockDeseado,
         decimal toleranciaPct,
         DateTimeOffset createdAtUtc)
         : base(id, tenantId, createdAtUtc)
@@ -24,17 +25,20 @@ public sealed class ProductoStockConfig : EntityBase
         ProductoId = productoId;
         SucursalId = sucursalId;
         StockMinimo = stockMinimo;
+        StockDeseado = stockDeseado;
         ToleranciaPct = toleranciaPct;
     }
 
     public Guid ProductoId { get; private set; }
     public Guid SucursalId { get; private set; }
     public decimal StockMinimo { get; private set; }
+    public decimal StockDeseado { get; private set; }
     public decimal ToleranciaPct { get; private set; }
 
-    public void Update(decimal stockMinimo, decimal toleranciaPct, DateTimeOffset updatedAtUtc)
+    public void Update(decimal stockMinimo, decimal stockDeseado, decimal toleranciaPct, DateTimeOffset updatedAtUtc)
     {
         StockMinimo = stockMinimo;
+        StockDeseado = stockDeseado;
         ToleranciaPct = toleranciaPct;
         MarkUpdated(updatedAtUtc);
     }

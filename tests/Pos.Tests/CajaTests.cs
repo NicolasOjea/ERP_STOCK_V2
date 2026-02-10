@@ -136,7 +136,13 @@ public sealed class CajaTests : IClassFixture<WebApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<PosDbContext>();
-        var caja = new Caja(Guid.NewGuid(), SeedData.TenantId, SeedData.SucursalId, $"Caja {Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        var caja = new Caja(
+            Guid.NewGuid(),
+            SeedData.TenantId,
+            SeedData.SucursalId,
+            $"Caja {Guid.NewGuid():N}",
+            Random.Shared.Next(1000, 999999).ToString(),
+            DateTimeOffset.UtcNow);
         db.Cajas.Add(caja);
         await db.SaveChangesAsync();
         return caja.Id;

@@ -131,7 +131,13 @@ public sealed class VentaConfirmTests : IClassFixture<WebApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<PosDbContext>();
-        var caja = new Caja(Guid.NewGuid(), SeedData.TenantId, SeedData.SucursalId, $"Caja {Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        var caja = new Caja(
+            Guid.NewGuid(),
+            SeedData.TenantId,
+            SeedData.SucursalId,
+            $"Caja {Guid.NewGuid():N}",
+            Random.Shared.Next(1000, 999999).ToString(),
+            DateTimeOffset.UtcNow);
         db.Cajas.Add(caja);
         await db.SaveChangesAsync();
         return caja.Id;
@@ -139,13 +145,14 @@ public sealed class VentaConfirmTests : IClassFixture<WebApiFactory>
 
     private static async Task<(VentaDto Venta, Guid ProductoId)> CrearVentaConProductoAsync(HttpClient client, string code)
     {
+        var proveedorId = await TestData.CreateProveedorAsync(client);
         var sku = $"SKU-{Guid.NewGuid():N}";
         var createResponse = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto {Guid.NewGuid():N}",
             sku,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);

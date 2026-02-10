@@ -53,9 +53,25 @@ public sealed class ProveedorService
                 });
         }
 
+        if (string.IsNullOrWhiteSpace(request.Telefono))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["telefono"] = new[] { "El telefono es obligatorio." }
+                });
+        }
+
         var tenantId = EnsureTenant();
         var now = DateTimeOffset.UtcNow;
-        var normalized = request with { Name = request.Name.Trim() };
+        var normalized = request with
+        {
+            Name = request.Name.Trim(),
+            Telefono = request.Telefono.Trim(),
+            Cuit = string.IsNullOrWhiteSpace(request.Cuit) ? null : request.Cuit.Trim(),
+            Direccion = string.IsNullOrWhiteSpace(request.Direccion) ? null : request.Direccion.Trim()
+        };
 
         var id = await _proveedorRepository.CreateAsync(tenantId, normalized, now, cancellationToken);
         var proveedor = await _proveedorRepository.GetByIdAsync(tenantId, id, cancellationToken);
@@ -98,7 +114,11 @@ public sealed class ProveedorService
                 });
         }
 
-        var hasChange = request.Name is not null || request.IsActive is not null;
+        var hasChange = request.Name is not null
+            || request.Telefono is not null
+            || request.Cuit is not null
+            || request.Direccion is not null
+            || request.IsActive is not null;
         if (!hasChange)
         {
             throw new ValidationException(
@@ -119,6 +139,16 @@ public sealed class ProveedorService
                 });
         }
 
+        if (request.Telefono is not null && string.IsNullOrWhiteSpace(request.Telefono))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["telefono"] = new[] { "El telefono no puede estar vacio." }
+                });
+        }
+
         var tenantId = EnsureTenant();
         var before = await _proveedorRepository.GetByIdAsync(tenantId, proveedorId, cancellationToken);
         if (before is null)
@@ -126,7 +156,13 @@ public sealed class ProveedorService
             throw new NotFoundException("Proveedor no encontrado.");
         }
 
-        var normalized = request with { Name = request.Name?.Trim() };
+        var normalized = request with
+        {
+            Name = request.Name?.Trim(),
+            Telefono = request.Telefono?.Trim(),
+            Cuit = request.Cuit is null ? null : string.IsNullOrWhiteSpace(request.Cuit) ? null : request.Cuit.Trim(),
+            Direccion = request.Direccion is null ? null : string.IsNullOrWhiteSpace(request.Direccion) ? null : request.Direccion.Trim()
+        };
         var updated = await _proveedorRepository.UpdateAsync(tenantId, proveedorId, normalized, DateTimeOffset.UtcNow, cancellationToken);
         if (!updated)
         {

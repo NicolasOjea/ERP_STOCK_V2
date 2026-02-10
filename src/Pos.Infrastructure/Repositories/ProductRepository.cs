@@ -61,20 +61,60 @@ public sealed class ProductRepository : IProductRepository
                     on p.ProveedorId equals pr.Id into prov
                 from pr in prov.DefaultIfEmpty()
                 orderby p.Name
-                select new ProductListItemDto(
+                select new
+                {
                     p.Id,
                     p.Name,
                     p.Sku,
                     p.CategoriaId,
-                    c != null ? c.Name : null,
+                    Categoria = c != null ? c.Name : null,
                     p.MarcaId,
-                    m != null ? m.Name : null,
+                    Marca = m != null ? m.Name : null,
                     p.ProveedorId,
-                    pr != null ? pr.Name : null,
-                    p.IsActive))
+                    Proveedor = pr != null ? pr.Name : null,
+                    p.PrecioBase,
+                    p.PrecioVenta,
+                    p.IsActive
+                })
             .ToListAsync(cancellationToken);
 
-        return results;
+        if (results.Count == 0)
+        {
+            return Array.Empty<ProductListItemDto>();
+        }
+
+        var ids = results.Select(r => r.Id).Distinct().ToList();
+        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && ids.Contains(c.ProductoId))
+            .GroupBy(c => c.ProductoId)
+            .Select(g => new
+            {
+                ProductoId = g.Key,
+                Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault()
+            })
+            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
+
+        var list = results.Select(r =>
+        {
+            codeMap.TryGetValue(r.Id, out var codigo);
+            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? r.Sku : codigo!;
+            return new ProductListItemDto(
+                r.Id,
+                r.Name,
+                r.Sku,
+                codigoFinal,
+                r.CategoriaId,
+                r.Categoria,
+                r.MarcaId,
+                r.Marca,
+                r.ProveedorId,
+                r.Proveedor,
+                r.PrecioBase,
+                r.PrecioVenta,
+                r.IsActive);
+        }).ToList();
+
+        return list;
     }
 
     public async Task<ProductDetailDto?> GetByIdAsync(Guid tenantId, Guid productId, CancellationToken cancellationToken = default)
@@ -120,6 +160,8 @@ public sealed class ProductRepository : IProductRepository
             product.Marca,
             product.Product.ProveedorId,
             product.Proveedor,
+            product.Product.PrecioBase,
+            product.Product.PrecioVenta,
             product.Product.IsActive,
             codes);
     }
@@ -186,6 +228,9 @@ public sealed class ProductRepository : IProductRepository
             }
         }
 
+        var precioBase = request.PrecioBase ?? 1m;
+        var precioVenta = request.PrecioVenta ?? precioBase;
+
         var product = new Producto(
             Guid.NewGuid(),
             tenantId,
@@ -195,7 +240,8 @@ public sealed class ProductRepository : IProductRepository
             request.MarcaId,
             request.ProveedorId,
             nowUtc,
-            request.PrecioBase ?? 1m,
+            precioBase,
+            precioVenta,
             request.IsActive ?? true);
 
         _dbContext.Productos.Add(product);
@@ -298,8 +344,9 @@ public sealed class ProductRepository : IProductRepository
         var newProveedorId = request.ProveedorId ?? product.ProveedorId;
         var newIsActive = request.IsActive ?? product.IsActive;
         var newPrecioBase = request.PrecioBase ?? product.PrecioBase;
+        var newPrecioVenta = request.PrecioVenta ?? product.PrecioVenta;
 
-        product.Update(newName, newSku, newCategoriaId, newMarcaId, newProveedorId, newPrecioBase, newIsActive, nowUtc);
+        product.Update(newName, newSku, newCategoriaId, newMarcaId, newProveedorId, newPrecioBase, newPrecioVenta, newIsActive, nowUtc);
 
         if (request.ProveedorId.HasValue)
         {
@@ -565,7 +612,8 @@ public sealed class ProductRepository : IProductRepository
                 p.Id,
                 p.Name,
                 p.Sku,
-                p.PrecioBase
+                p.PrecioBase,
+                p.PrecioVenta
             })
             .ToListAsync(cancellationToken);
 
@@ -598,7 +646,7 @@ public sealed class ProductRepository : IProductRepository
             .Select(p =>
             {
                 var codigo = codeByProduct.TryGetValue(p.Id, out var c) ? c : p.Sku;
-                var precio = prices.TryGetValue(p.Id, out var price) ? price : p.PrecioBase;
+                var precio = prices.TryGetValue(p.Id, out var price) ? price : (p.PrecioVenta > 0 ? p.PrecioVenta : p.PrecioBase);
                 return new EtiquetaItemDto(p.Id, p.Name, precio, codigo);
             })
             .ToList();

@@ -10,5 +10,7 @@ public sealed record ProductDetailDto(
     string? Marca,
     Guid? ProveedorId,
     string? Proveedor,
+    decimal PrecioBase,
+    decimal PrecioVenta,
     bool IsActive,
     IReadOnlyCollection<ProductCodeDto> Codes);

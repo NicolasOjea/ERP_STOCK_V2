@@ -32,12 +32,15 @@ public sealed class ProveedorRepository : IProveedorRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{term}%"));
+            query = query.Where(p =>
+                EF.Functions.ILike(p.Name, $"%{term}%")
+                || EF.Functions.ILike(p.Telefono, $"%{term}%")
+                || (p.Cuit != null && EF.Functions.ILike(p.Cuit, $"%{term}%")));
         }
 
         return await query
             .OrderBy(p => p.Name)
-            .Select(p => new ProveedorDto(p.Id, p.Name, p.IsActive))
+            .Select(p => new ProveedorDto(p.Id, p.Name, p.Telefono, p.Cuit, p.Direccion, p.IsActive))
             .ToListAsync(cancellationToken);
     }
 
@@ -47,7 +50,15 @@ public sealed class ProveedorRepository : IProveedorRepository
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
     {
-        var proveedor = new Proveedor(Guid.NewGuid(), tenantId, request.Name, nowUtc, request.IsActive ?? true);
+        var proveedor = new Proveedor(
+            Guid.NewGuid(),
+            tenantId,
+            request.Name,
+            request.Telefono,
+            request.Cuit,
+            request.Direccion,
+            nowUtc,
+            request.IsActive ?? true);
         _dbContext.Proveedores.Add(proveedor);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return proveedor.Id;
@@ -69,9 +80,12 @@ public sealed class ProveedorRepository : IProveedorRepository
         }
 
         var newName = request.Name is null ? proveedor.Name : request.Name;
+        var newTelefono = request.Telefono is null ? proveedor.Telefono : request.Telefono;
+        var newCuit = request.Cuit is null ? proveedor.Cuit : request.Cuit;
+        var newDireccion = request.Direccion is null ? proveedor.Direccion : request.Direccion;
         var newIsActive = request.IsActive ?? proveedor.IsActive;
 
-        proveedor.Update(newName, newIsActive, nowUtc);
+        proveedor.Update(newName, newTelefono, newCuit, newDireccion, newIsActive, nowUtc);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -83,7 +97,7 @@ public sealed class ProveedorRepository : IProveedorRepository
     {
         return await _dbContext.Proveedores.AsNoTracking()
             .Where(p => p.TenantId == tenantId && p.Id == proveedorId)
-            .Select(p => new ProveedorDto(p.Id, p.Name, p.IsActive))
+            .Select(p => new ProveedorDto(p.Id, p.Name, p.Telefono, p.Cuit, p.Direccion, p.IsActive))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

@@ -1228,7 +1228,7 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<decimal>("ToleranciaPct")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(6,2)")
-                        .HasDefaultValue(1.25m);
+                        .HasDefaultValue(25m);
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

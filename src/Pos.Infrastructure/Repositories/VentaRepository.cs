@@ -98,6 +98,13 @@ public sealed class VentaRepository : IVentaRepository
             throw new ConflictException("La venta no esta en borrador.");
         }
 
+        var cajaAbierta = await _dbContext.CajaSesiones.AsNoTracking()
+            .AnyAsync(s => s.TenantId == tenantId && s.SucursalId == sucursalId && s.Estado == CajaSesionEstado.Abierta, cancellationToken);
+        if (!cajaAbierta)
+        {
+            throw new ConflictException("No hay caja abierta.");
+        }
+
         var product = await (from c in _dbContext.ProductoCodigos.AsNoTracking()
                 join p in _dbContext.Productos.AsNoTracking() on c.ProductoId equals p.Id
                 where c.TenantId == tenantId && p.TenantId == tenantId && c.Codigo == code
@@ -107,6 +114,7 @@ public sealed class VentaRepository : IVentaRepository
                     p.Name,
                     p.Sku,
                     p.PrecioBase,
+                    p.PrecioVenta,
                     Codigo = c.Codigo
                 })
             .FirstOrDefaultAsync(cancellationToken);
@@ -124,7 +132,13 @@ public sealed class VentaRepository : IVentaRepository
         var precioUnitario = 0m;
         if (item is null)
         {
-            precioUnitario = await GetPrecioUnitarioAsync(tenantId, venta.ListaPrecio, product.Id, product.PrecioBase, cancellationToken);
+            precioUnitario = await GetPrecioUnitarioAsync(
+                tenantId,
+                venta.ListaPrecio,
+                product.Id,
+                product.PrecioVenta,
+                product.PrecioBase,
+                cancellationToken);
             item = new VentaItem(Guid.NewGuid(), tenantId, ventaId, product.Id, product.Codigo, 1m, precioUnitario, nowUtc);
             _dbContext.VentaItems.Add(item);
             creado = true;
@@ -150,6 +164,145 @@ public sealed class VentaRepository : IVentaRepository
             item.Cantidad * precioUnitario);
 
         return new VentaItemChangeDto(dto, cantidadAntes, item.Cantidad, creado);
+    }
+
+    public async Task<VentaItemChangeDto> AddItemByProductAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        Guid ventaId,
+        Guid productId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var venta = await _dbContext.Ventas
+            .FirstOrDefaultAsync(v => v.TenantId == tenantId && v.SucursalId == sucursalId && v.Id == ventaId, cancellationToken);
+
+        if (venta is null)
+        {
+            throw new NotFoundException("Venta no encontrada.");
+        }
+
+        if (venta.Estado != VentaEstado.Borrador)
+        {
+            throw new ConflictException("La venta no esta en borrador.");
+        }
+
+        var cajaAbierta = await _dbContext.CajaSesiones.AsNoTracking()
+            .AnyAsync(s => s.TenantId == tenantId && s.SucursalId == sucursalId && s.Estado == CajaSesionEstado.Abierta, cancellationToken);
+        if (!cajaAbierta)
+        {
+            throw new ConflictException("No hay caja abierta.");
+        }
+
+        var product = await _dbContext.Productos.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.Id == productId)
+            .Select(p => new { p.Id, p.Name, p.Sku, p.PrecioBase, p.PrecioVenta })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (product is null)
+        {
+            throw new NotFoundException("Producto no encontrado.");
+        }
+
+        var codigo = await _dbContext.ProductoCodigos.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && c.ProductoId == productId)
+            .OrderBy(c => c.Codigo)
+            .Select(c => c.Codigo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? product.Sku : codigo!;
+
+        var item = await _dbContext.VentaItems
+            .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.VentaId == ventaId && i.ProductoId == product.Id, cancellationToken);
+
+        var creado = false;
+        var cantidadAntes = 0m;
+        var precioUnitario = 0m;
+        if (item is null)
+        {
+            precioUnitario = await GetPrecioUnitarioAsync(
+                tenantId,
+                venta.ListaPrecio,
+                product.Id,
+                product.PrecioVenta,
+                product.PrecioBase,
+                cancellationToken);
+            item = new VentaItem(Guid.NewGuid(), tenantId, ventaId, product.Id, codigoFinal, 1m, precioUnitario, nowUtc);
+            _dbContext.VentaItems.Add(item);
+            creado = true;
+        }
+        else
+        {
+            cantidadAntes = item.Cantidad;
+            item.Incrementar(1m, nowUtc);
+            precioUnitario = item.PrecioUnitario;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        var dto = new VentaItemDto(
+            item.Id,
+            product.Id,
+            product.Name,
+            product.Sku,
+            item.Codigo,
+            item.Cantidad,
+            precioUnitario,
+            item.Cantidad * precioUnitario);
+
+        return new VentaItemChangeDto(dto, cantidadAntes, item.Cantidad, creado);
+    }
+
+    public async Task<VentaItemDto> RemoveItemAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        Guid ventaId,
+        Guid itemId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var venta = await _dbContext.Ventas
+            .FirstOrDefaultAsync(v => v.TenantId == tenantId && v.SucursalId == sucursalId && v.Id == ventaId, cancellationToken);
+
+        if (venta is null)
+        {
+            throw new NotFoundException("Venta no encontrada.");
+        }
+
+        if (venta.Estado != VentaEstado.Borrador)
+        {
+            throw new ConflictException("La venta no esta en borrador.");
+        }
+
+        var item = await (from i in _dbContext.VentaItems
+                join p in _dbContext.Productos.AsNoTracking() on i.ProductoId equals p.Id
+                where i.TenantId == tenantId && i.VentaId == ventaId && i.Id == itemId && p.TenantId == tenantId
+                select new { Item = i, p.Name, p.Sku })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (item is null)
+        {
+            throw new NotFoundException("Item no encontrado.");
+        }
+
+        _dbContext.VentaItems.Remove(item.Item);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return new VentaItemDto(
+            item.Item.Id,
+            item.Item.ProductoId,
+            item.Name,
+            item.Sku,
+            item.Item.Codigo,
+            item.Item.Cantidad,
+            item.Item.PrecioUnitario,
+            item.Item.Cantidad * item.Item.PrecioUnitario);
     }
 
     public async Task<VentaItemChangeDto> UpdateItemCantidadAsync(
@@ -231,12 +384,34 @@ public sealed class VentaRepository : IVentaRepository
             throw new ConflictException("La venta no esta en borrador.");
         }
 
-        var cajaSesion = await _dbContext.CajaSesiones
-            .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.SucursalId == sucursalId && s.Estado == CajaSesionEstado.Abierta, cancellationToken);
-
-        if (cajaSesion is null)
+        CajaSesion? cajaSesion;
+        if (request.CajaSesionId.HasValue)
         {
-            throw new ConflictException("No hay caja abierta.");
+            var cajaSesionId = request.CajaSesionId.Value;
+            cajaSesion = await _dbContext.CajaSesiones
+                .FirstOrDefaultAsync(
+                    s => s.TenantId == tenantId
+                         && s.SucursalId == sucursalId
+                         && s.Id == cajaSesionId
+                         && s.Estado == CajaSesionEstado.Abierta,
+                    cancellationToken);
+
+            if (cajaSesion is null)
+            {
+                throw new ConflictException("La caja indicada no esta abierta.");
+            }
+        }
+        else
+        {
+            cajaSesion = await _dbContext.CajaSesiones
+                .Where(s => s.TenantId == tenantId && s.SucursalId == sucursalId && s.Estado == CajaSesionEstado.Abierta)
+                .OrderByDescending(s => s.AperturaAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (cajaSesion is null)
+            {
+                throw new ConflictException("No hay caja abierta.");
+            }
         }
 
         var items = await _dbContext.VentaItems
@@ -595,6 +770,7 @@ public sealed class VentaRepository : IVentaRepository
         Guid tenantId,
         string listaPrecio,
         Guid productoId,
+        decimal precioVenta,
         decimal precioBase,
         CancellationToken cancellationToken)
     {
@@ -617,6 +793,6 @@ public sealed class VentaRepository : IVentaRepository
             }
         }
 
-        return precioBase;
+        return precioVenta > 0 ? precioVenta : precioBase;
     }
 }

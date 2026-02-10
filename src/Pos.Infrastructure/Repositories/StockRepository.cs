@@ -30,7 +30,7 @@ public sealed class StockRepository : IStockRepository
     {
         return await _dbContext.ProductoStockConfigs.AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.SucursalId == sucursalId && c.ProductoId == productId)
-            .Select(c => new StockConfigDto(c.ProductoId, c.SucursalId, c.StockMinimo, c.ToleranciaPct))
+            .Select(c => new StockConfigDto(c.ProductoId, c.SucursalId, c.StockMinimo, c.StockDeseado, c.ToleranciaPct))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -39,6 +39,7 @@ public sealed class StockRepository : IStockRepository
         Guid sucursalId,
         Guid productId,
         decimal stockMinimo,
+        decimal stockDeseado,
         decimal toleranciaPct,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
@@ -54,18 +55,19 @@ public sealed class StockRepository : IStockRepository
                 productId,
                 sucursalId,
                 stockMinimo,
+                stockDeseado,
                 toleranciaPct,
                 nowUtc);
             _dbContext.ProductoStockConfigs.Add(existing);
         }
         else
         {
-            existing.Update(stockMinimo, toleranciaPct, nowUtc);
+            existing.Update(stockMinimo, stockDeseado, toleranciaPct, nowUtc);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new StockConfigDto(existing.ProductoId, existing.SucursalId, existing.StockMinimo, existing.ToleranciaPct);
+        return new StockConfigDto(existing.ProductoId, existing.SucursalId, existing.StockMinimo, existing.StockDeseado, existing.ToleranciaPct);
     }
 
     public async Task<IReadOnlyList<StockSaldoDto>> GetSaldosAsync(
@@ -128,10 +130,22 @@ public sealed class StockRepository : IStockRepository
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
+        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && productIds.Contains(c.ProductoId))
+            .GroupBy(c => c.ProductoId)
+            .Select(g => new
+            {
+                ProductoId = g.Key,
+                Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault()
+            })
+            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
+
         var result = products.Select(p =>
         {
             var saldo = saldoByProduct[p.Id];
-            return new StockSaldoDto(p.Id, p.Name, p.Sku, saldo.CantidadActual);
+            codeMap.TryGetValue(p.Id, out var codigo);
+            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? p.Sku : codigo!;
+            return new StockSaldoDto(p.Id, p.Name, p.Sku, codigoFinal, saldo.CantidadActual);
         }).ToList();
 
         return result;
@@ -165,16 +179,25 @@ public sealed class StockRepository : IStockRepository
                     Proveedor = pr != null ? pr.Name : null,
                     StockActual = saldo != null ? saldo.CantidadActual : 0m,
                     c.StockMinimo,
+                    c.StockDeseado,
                     c.ToleranciaPct
                 })
             .ToListAsync(cancellationToken);
 
+        var productIds = configs.Select(c => c.Id).Distinct().ToList();
+        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && productIds.Contains(c.ProductoId))
+            .GroupBy(c => c.ProductoId)
+            .Select(g => new { ProductoId = g.Key, Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault() })
+            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
+
         var alertas = new List<StockAlertaDto>();
         foreach (var item in configs)
         {
+            var limite = item.StockMinimo * (1 + (item.ToleranciaPct / 100m));
             var nivel = item.StockActual <= item.StockMinimo
                 ? "CRITICO"
-                : item.StockActual <= item.StockMinimo * item.ToleranciaPct
+                : item.StockActual <= limite
                     ? "BAJO"
                     : null;
 
@@ -183,13 +206,19 @@ public sealed class StockRepository : IStockRepository
                 continue;
             }
 
+            codeMap.TryGetValue(item.Id, out var codigo);
+            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? item.Sku : codigo!;
+            var sugerido = Math.Max(item.StockDeseado - item.StockActual, 0m);
             alertas.Add(new StockAlertaDto(
                 item.Id,
                 item.Name,
                 item.Sku,
+                codigoFinal,
                 item.StockActual,
                 item.StockMinimo,
+                item.StockDeseado,
                 item.ToleranciaPct,
+                sugerido,
                 nivel));
         }
 
@@ -229,7 +258,7 @@ public sealed class StockRepository : IStockRepository
             .ToListAsync(cancellationToken);
 
         var candidates = configs
-            .Where(x => x.StockActual <= x.StockMinimo * x.ToleranciaPct)
+            .Where(x => x.StockActual <= x.StockMinimo * (1 + (x.ToleranciaPct / 100m)))
             .ToList();
 
         if (!candidates.Any())
@@ -248,7 +277,7 @@ public sealed class StockRepository : IStockRepository
         {
             codeMap.TryGetValue(c.Id, out var codigo);
             var codigoPrincipal = string.IsNullOrWhiteSpace(codigo) ? c.Sku : codigo!;
-            var sugerido = Math.Max((c.StockMinimo * c.ToleranciaPct) - c.StockActual, 0m);
+            var sugerido = Math.Max((c.StockMinimo * (1 + (c.ToleranciaPct / 100m))) - c.StockActual, 0m);
             return new
             {
                 c.ProveedorId,
@@ -283,5 +312,34 @@ public sealed class StockRepository : IStockRepository
             grupos.Sum(g => g.TotalSugerido),
             grupos.Sum(g => g.TotalItems),
             grupos);
+    }
+
+    public async Task<IReadOnlyList<StockRemitoProductoDto>> GetProductosRemitoAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> productoIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (productoIds.Count == 0)
+        {
+            return Array.Empty<StockRemitoProductoDto>();
+        }
+
+        var products = await _dbContext.Productos.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && productoIds.Contains(p.Id))
+            .Select(p => new { p.Id, p.Name, p.Sku })
+            .ToListAsync(cancellationToken);
+
+        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && productoIds.Contains(c.ProductoId))
+            .GroupBy(c => c.ProductoId)
+            .Select(g => new { ProductoId = g.Key, Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault() })
+            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
+
+        return products.Select(p =>
+        {
+            codeMap.TryGetValue(p.Id, out var codigo);
+            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? p.Sku : codigo!;
+            return new StockRemitoProductoDto(p.Id, p.Name, p.Sku, codigoFinal);
+        }).ToList();
     }
 }

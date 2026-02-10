@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IListaPrecioRepository, ListaPrecioRepository>();
         services.AddScoped<IDevolucionRepository, DevolucionRepository>();
         services.AddScoped<IEtiquetaPdfGenerator, EtiquetaPdfGenerator>();
+        services.AddScoped<IRemitoPdfGenerator, RemitoPdfGenerator>();
         services.AddScoped<IAuditLogQueryRepository, AuditLogQueryRepository>();
         services.AddScoped<IReportesRepository, ReportesRepository>();
         services.AddScoped<IFiscalProvider, DummyFiscalProvider>();

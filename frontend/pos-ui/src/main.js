@@ -54,6 +54,8 @@ setUnauthorizedHandler(() => {
   }
 });
 
-registerSW({ immediate: true });
+if (import.meta.env.PROD) {
+  registerSW({ immediate: true });
+}
 
 app.mount('#app');

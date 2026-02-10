@@ -45,7 +45,7 @@ export const requestJson = async (path, options = {}) => {
 
   const contentType = response.headers.get('content-type') || '';
   let data = null;
-  if (contentType.includes('application/json')) {
+  if (contentType.includes('application/json') || contentType.includes('+json')) {
     data = await response.json();
   }
 

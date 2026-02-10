@@ -17,6 +17,7 @@ public interface IStockRepository
         Guid sucursalId,
         Guid productId,
         decimal stockMinimo,
+        decimal stockDeseado,
         decimal toleranciaPct,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
@@ -35,5 +36,10 @@ public interface IStockRepository
     Task<StockSugeridoCompraDto> GetSugeridoCompraAsync(
         Guid tenantId,
         Guid sucursalId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<StockRemitoProductoDto>> GetProductosRemitoAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> productoIds,
         CancellationToken cancellationToken = default);
 }

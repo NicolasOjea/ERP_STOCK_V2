@@ -44,6 +44,23 @@
           @blur="maybeRestoreScan"
           :disabled="!canScan || scanLoading"
         />
+        <v-autocomplete
+          v-model="productoSeleccionado"
+          v-model:search="productoSearch"
+          :items="productosEncontrados"
+          item-title="label"
+          return-object
+          label="Buscar producto"
+          variant="outlined"
+          density="comfortable"
+          clearable
+          hide-details
+          class="pos-search"
+          :loading="productoSearchLoading"
+          :disabled="!cajaAbierta"
+          @update:search="searchProductos"
+          @update:modelValue="onProductoSeleccionado"
+        />
         <v-btn
           color="primary"
           size="large"
@@ -123,6 +140,15 @@
             </template>
             <template #item.subtotal="{ item }">
               <strong>{{ formatMoney(getRow(item).subtotal) }}</strong>
+            </template>
+            <template #item.acciones="{ item }">
+              <v-btn
+                icon="mdi-delete"
+                variant="text"
+                color="error"
+                :disabled="!canEdit"
+                @click="removeItem(getRow(item))"
+              />
             </template>
           </v-data-table>
 
@@ -326,14 +352,15 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { postJson, requestJson } from '../services/apiClient';
+import { getJson, postJson, requestJson } from '../services/apiClient';
 
 const auth = useAuthStore();
 
 const venta = ref(null);
 const items = ref([]);
 const pricing = ref(null);
-const cajaStatus = ref('ABIERTA');
+const cajaStatus = ref('CERRADA');
+const cajaSessionId = ref('');
 const scanInput = ref('');
 const scanInputRef = ref(null);
 const scanLoading = ref(false);
@@ -347,6 +374,12 @@ const dialogAnular = ref(false);
 const dialogStock = ref(false);
 const motivoAnular = ref('');
 const qtyEdits = ref({});
+const productoSearch = ref('');
+const productoSearchLoading = ref(false);
+const productosEncontrados = ref([]);
+const productoSeleccionado = ref(null);
+const POS_VENTA_KEY = 'pos-venta-id';
+let productoSearchTimer = null;
 
 const snackbar = ref({
   show: false,
@@ -364,13 +397,15 @@ const headers = [
   { title: 'Codigo', value: 'codigo' },
   { title: 'Cant', value: 'cantidad', align: 'end' },
   { title: 'Precio', value: 'precioUnitario', align: 'end' },
-  { title: 'Subtotal', value: 'subtotal', align: 'end' }
+  { title: 'Subtotal', value: 'subtotal', align: 'end' },
+  { title: '', value: 'acciones', align: 'end' }
 ];
 
 const ventaId = computed(() => venta.value?.id || '');
 const ventaEstado = computed(() => venta.value?.estado || 'SIN_VENTA');
 const canEdit = computed(() => ventaEstado.value === 'BORRADOR');
-const canScan = computed(() => ventaEstado.value === 'BORRADOR' || ventaEstado.value === 'SIN_VENTA');
+const cajaAbierta = computed(() => cajaStatus.value === 'ABIERTA');
+const canScan = computed(() => cajaAbierta.value && (ventaEstado.value === 'BORRADOR' || ventaEstado.value === 'SIN_VENTA'));
 
 const totalBruto = computed(() => {
   if (pricing.value?.totalBruto != null) return pricing.value.totalBruto;
@@ -398,6 +433,37 @@ const canConfirm = computed(() => {
   if (Math.abs(diferenciaPagos.value) > 0.0001) return false;
   return true;
 });
+
+const loadCajaSession = () => {
+  const raw = localStorage.getItem('pos-caja-session');
+  if (!raw) {
+    cajaStatus.value = 'CERRADA';
+    cajaSessionId.value = '';
+    return;
+  }
+  try {
+    const session = JSON.parse(raw);
+    if (session?.estado === 'ABIERTA') {
+      cajaStatus.value = 'ABIERTA';
+      cajaSessionId.value = session.id || '';
+    } else {
+      cajaStatus.value = 'CERRADA';
+      cajaSessionId.value = '';
+    }
+  } catch {
+    cajaStatus.value = 'CERRADA';
+    cajaSessionId.value = '';
+  }
+};
+
+const saveVentaId = (id) => {
+  if (!id) return;
+  localStorage.setItem(POS_VENTA_KEY, id);
+};
+
+const clearVentaId = () => {
+  localStorage.removeItem(POS_VENTA_KEY);
+};
 
 const scanFlash = ref('');
 const scanFlashClass = computed(() => {
@@ -498,6 +564,7 @@ const createVenta = async () => {
       throw new Error(extractProblemMessage(data));
     }
     venta.value = data;
+    saveVentaId(venta.value?.id);
     items.value = data.items?.map((item) => ({
       ...item,
       subtotal: item.subtotal ?? item.cantidad * item.precioUnitario
@@ -517,9 +584,39 @@ const createVenta = async () => {
   }
 };
 
+const restoreVenta = async () => {
+  const savedId = localStorage.getItem(POS_VENTA_KEY);
+  if (!savedId) return;
+
+  try {
+    const { response, data } = await getJson(`/api/v1/ventas/${savedId}`);
+    if (!response.ok) {
+      clearVentaId();
+      return;
+    }
+    venta.value = data;
+    items.value = data.items?.map((item) => ({
+      ...item,
+      subtotal: item.subtotal ?? item.cantidad * item.precioUnitario
+    })) || [];
+    qtyEdits.value = {};
+    items.value.forEach((item) => {
+      qtyEdits.value[item.id] = item.cantidad;
+    });
+    pricing.value = null;
+    pagos.value = [];
+  } catch {
+    clearVentaId();
+  }
+};
+
 const handleScan = async () => {
   const code = scanInput.value.trim();
   if (!code || scanLoading.value || !canScan.value) return;
+  if (!cajaAbierta.value) {
+    flash('error', 'Caja cerrada');
+    return;
+  }
 
   const id = await ensureVenta();
   if (!id) return;
@@ -546,6 +643,104 @@ const handleScan = async () => {
   } finally {
     scanLoading.value = false;
     focusScan();
+  }
+};
+
+const mapProductoResults = (items) =>
+  (items || []).map((item) => ({
+    ...item,
+    label: `${item.name} (${item.sku})${item.codigo ? ` - ${item.codigo}` : ''}`
+  }));
+
+const searchProductos = (term) => {
+  if (!cajaAbierta.value) {
+    productosEncontrados.value = [];
+    return;
+  }
+  if (productoSearchTimer) {
+    clearTimeout(productoSearchTimer);
+  }
+  if (!term || term.trim().length < 2) {
+    productosEncontrados.value = [];
+    return;
+  }
+  productoSearchTimer = setTimeout(async () => {
+    productoSearchLoading.value = true;
+    try {
+      const params = new URLSearchParams();
+      params.set('search', term.trim());
+      params.set('activo', 'true');
+      const { response, data } = await getJson(`/api/v1/productos?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(extractProblemMessage(data));
+      }
+      productosEncontrados.value = mapProductoResults(data || []);
+    } catch (err) {
+      flash('error', err?.message || 'No se pudieron buscar productos.');
+    } finally {
+      productoSearchLoading.value = false;
+    }
+  }, 250);
+};
+
+const onProductoSeleccionado = async (producto) => {
+  if (!producto?.id) return;
+  if (!cajaAbierta.value) {
+    flash('error', 'Caja cerrada');
+    return;
+  }
+  const id = await ensureVenta();
+  if (!id) return;
+
+  try {
+    const { response, data } = await postJson(`/api/v1/ventas/${id}/items`, {
+      productId: producto.id
+    });
+    if (!response.ok) {
+      const message = extractProblemMessage(data);
+      flash('error', message);
+      return;
+    }
+    applyItemDto(data);
+    flash('success', `Agregado: ${data.nombre}`);
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo agregar el producto.');
+  } finally {
+    productoSeleccionado.value = null;
+    productoSearch.value = '';
+    productosEncontrados.value = [];
+    focusScan();
+  }
+};
+
+const removeItem = async (item) => {
+  if (!ventaId.value || !canEdit.value) return;
+  try {
+    const { response, data } = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 405) {
+        const fallback = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ cantidad: 0 })
+        });
+        if (!fallback.response.ok) {
+          const message = extractProblemMessage(fallback.data);
+          flash('error', message);
+          return;
+        }
+      } else {
+        const message = extractProblemMessage(data);
+        flash('error', message);
+        return;
+      }
+    }
+    items.value = items.value.filter((i) => i.id !== item.id);
+    delete qtyEdits.value[item.id];
+    flash('success', 'Item eliminado');
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo eliminar el item.');
   }
 };
 
@@ -639,10 +834,12 @@ const confirmarVenta = async () => {
   confirmLoading.value = true;
 
   try {
+    loadCajaSession();
     const payload = {
       pagos: pagos.value
         .filter((line) => line.medioPago && line.monto > 0)
-        .map((line) => ({ medioPago: line.medioPago, monto: line.monto }))
+        .map((line) => ({ medioPago: line.medioPago, monto: line.monto })),
+      cajaSesionId: cajaSessionId.value || null
     };
 
     const { response, data } = await postJson(`/api/v1/ventas/${ventaId.value}/confirmar`, payload);
@@ -657,6 +854,7 @@ const confirmarVenta = async () => {
     }
 
     venta.value = data.venta || data.Venta || data;
+    clearVentaId();
     items.value = (venta.value.items || []).map((item) => ({
       ...item,
       subtotal: item.subtotal ?? item.cantidad * item.precioUnitario
@@ -698,6 +896,7 @@ const anularVenta = async () => {
     }
 
     venta.value = data.venta || data.Venta || data;
+    clearVentaId();
     items.value = (venta.value.items || []).map((item) => ({
       ...item,
       subtotal: item.subtotal ?? item.cantidad * item.precioUnitario
@@ -756,6 +955,8 @@ watch(dialogAnular, (open) => {
 });
 
 onMounted(() => {
+  loadCajaSession();
+  restoreVenta();
   focusScan();
   window.addEventListener('keydown', onKeydown);
 });
@@ -772,6 +973,10 @@ onBeforeUnmount(() => {
 
 .pos-scan {
   min-width: 320px;
+}
+
+.pos-search {
+  min-width: 280px;
 }
 
 .gap-1 {

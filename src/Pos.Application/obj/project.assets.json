@@ -2,18 +2,6 @@
   "version": 3,
   "targets": {
     "net8.0": {
-      "Microsoft.Extensions.DependencyInjection.Abstractions/8.0.0": {
-        "type": "package",
-        "compile": {
-          "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {}
-        },
-        "runtime": {
-          "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {}
-        },
-        "build": {
-          "buildTransitive/net6.0/_._": {}
-        }
-      },
       "Pos.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -27,32 +15,6 @@
     }
   },
   "libraries": {
-    "Microsoft.Extensions.DependencyInjection.Abstractions/8.0.0": {
-      "sha512": "cjWrLkJXK0rs4zofsK4bSdg+jhDLTaxrkXu4gS6Y7MAlCvRyNNgwY/lJi5RDlQOnSZweHqoyvgvbdvQsRIW+hg==",
-      "type": "package",
-      "path": "microsoft.extensions.dependencyinjection.abstractions/8.0.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "Icon.png",
-        "LICENSE.TXT",
-        "PACKAGE.md",
-        "THIRD-PARTY-NOTICES.TXT",
-        "buildTransitive/net461/Microsoft.Extensions.DependencyInjection.Abstractions.targets",
-        "buildTransitive/net462/_._",
-        "buildTransitive/net6.0/_._",
-        "buildTransitive/netcoreapp2.0/Microsoft.Extensions.DependencyInjection.Abstractions.targets",
-        "lib/net462/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
-        "lib/net6.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
-        "lib/net7.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
-        "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
-        "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
-        "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
-        "microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
-        "microsoft.extensions.dependencyinjection.abstractions.nuspec",
-        "useSharedDesignerContext.txt"
-      ]
-    },
     "Pos.Domain/1.0.0": {
       "type": "project",
       "path": "../Pos.Domain/Pos.Domain.csproj",
@@ -66,32 +28,34 @@
     ]
   },
   "packageFolders": {
-    "/root/.nuget/packages/": {}
+    "C:\\Users\\Usuario\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/src/src/Pos.Application/Pos.Application.csproj",
+      "projectUniqueName": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj",
       "projectName": "Pos.Application",
-      "projectPath": "/src/src/Pos.Application/Pos.Application.csproj",
-      "packagesPath": "/root/.nuget/packages/",
-      "outputPath": "/src/src/Pos.Application/obj/",
+      "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\Pos.Application.csproj",
+      "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Application\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/root/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/src/src/Pos.Domain/Pos.Domain.csproj": {
-              "projectPath": "/src/src/Pos.Domain/Pos.Domain.csproj"
+            "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj": {
+              "projectPath": "C:\\Users\\Usuario\\OneDrive\\Desktop\\programacion\\ERP_STOCK_V2\\src\\Pos.Domain\\Pos.Domain.csproj"
             }
           }
         }
@@ -132,8 +96,26 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.417/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1801",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "No se puede cargar el índice de servicio del origen https://api.nuget.org/v3/index.json.",
+      "libraryId": "Microsoft.Extensions.DependencyInjection.Abstractions"
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "No se encuentra el paquete Microsoft.Extensions.DependencyInjection.Abstractions. No existe ningún paquete con este id. en los orígenes: Microsoft Visual Studio Offline Packages, nuget.org",
+      "libraryId": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }

@@ -29,6 +29,7 @@ public sealed class VentaTests : IClassFixture<WebApiFactory>
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var code = $"CODE-{Guid.NewGuid():N}";
+        await TestData.OpenCajaSessionAsync(client);
         var venta = await CrearVentaConProductoAsync(client, code);
 
         var scanResponse = await client.PostAsJsonAsync(
@@ -59,6 +60,7 @@ public sealed class VentaTests : IClassFixture<WebApiFactory>
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var code = $"CODE-{Guid.NewGuid():N}";
+        await TestData.OpenCajaSessionAsync(client);
         var venta = await CrearVentaConProductoAsync(client, code);
 
         var first = await client.PostAsJsonAsync(
@@ -92,6 +94,7 @@ public sealed class VentaTests : IClassFixture<WebApiFactory>
             PermissionCodes.VentaCrear);
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        await TestData.OpenCajaSessionAsync(client);
         var ventaResponse = await client.PostAsync("/api/v1/ventas", null);
         Assert.Equal(HttpStatusCode.Created, ventaResponse.StatusCode);
         var venta = await ventaResponse.Content.ReadFromJsonAsync<VentaDto>();
@@ -106,13 +109,14 @@ public sealed class VentaTests : IClassFixture<WebApiFactory>
 
     private static async Task<VentaDto> CrearVentaConProductoAsync(HttpClient client, string code)
     {
+        var proveedorId = await TestData.CreateProveedorAsync(client);
         var sku = $"SKU-{Guid.NewGuid():N}";
         var createResponse = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto {Guid.NewGuid():N}",
             sku,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);

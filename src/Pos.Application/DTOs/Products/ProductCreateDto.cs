@@ -7,4 +7,5 @@ public sealed record ProductCreateDto(
     Guid? MarcaId,
     Guid? ProveedorId,
     bool? IsActive,
-    decimal? PrecioBase = null);
+    decimal? PrecioBase = null,
+    decimal? PrecioVenta = null);

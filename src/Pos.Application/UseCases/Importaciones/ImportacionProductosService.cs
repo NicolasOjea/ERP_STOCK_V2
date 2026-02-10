@@ -155,7 +155,8 @@ public sealed class ImportacionProductosService
                 null,
                 null,
                 row.Activo,
-                row.PrecioBase);
+                row.PrecioBase,
+                null);
 
             await _productRepository.UpdateAsync(tenantId, productId.Value, updateRequest, now, cancellationToken);
 

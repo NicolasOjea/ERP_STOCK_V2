@@ -17,6 +17,56 @@ public sealed class CajaRepository : ICajaRepository
         _dbContext = dbContext;
     }
 
+    public async Task<IReadOnlyList<CajaDto>> GetCajasAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        bool? activo,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Cajas.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && c.SucursalId == sucursalId);
+
+        if (activo.HasValue)
+        {
+            query = query.Where(c => c.IsActive == activo.Value);
+        }
+
+        return await query
+            .OrderBy(c => c.Name)
+            .Select(c => new CajaDto(c.Id, c.Name, c.Numero, c.IsActive))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<CajaDto> CreateCajaAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        CajaCreateDto request,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var numero = request.Numero.Trim();
+        var exists = await _dbContext.Cajas.AsNoTracking()
+            .AnyAsync(c => c.TenantId == tenantId && c.SucursalId == sucursalId && c.Numero == numero, cancellationToken);
+        if (exists)
+        {
+            throw new ConflictException("Numero de caja ya existe.");
+        }
+
+        var caja = new Caja(
+            Guid.NewGuid(),
+            tenantId,
+            sucursalId,
+            request.Nombre,
+            numero,
+            nowUtc,
+            request.IsActive ?? true);
+
+        _dbContext.Cajas.Add(caja);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CajaDto(caja.Id, caja.Name, caja.Numero, caja.IsActive);
+    }
+
     public Task<bool> CajaExistsAsync(Guid tenantId, Guid sucursalId, Guid cajaId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Cajas.AsNoTracking()

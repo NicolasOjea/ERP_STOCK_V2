@@ -60,7 +60,11 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     hasPermission(permission) {
-      return this.permissions.includes(permission);
+      if (!permission) return false;
+      const normalized = permission.startsWith('PERM_')
+        ? permission.slice(5)
+        : permission;
+      return this.permissions.includes(normalized) || this.permissions.includes(permission);
     },
     loadFromStorage() {
       const raw = localStorage.getItem(STORAGE_KEY);

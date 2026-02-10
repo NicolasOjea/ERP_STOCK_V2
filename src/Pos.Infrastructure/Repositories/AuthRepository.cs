@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Pos.Domain.Enums;
 using Pos.Application.Abstractions;
 using Pos.Application.DTOs.Auth;
 using Pos.Infrastructure.Persistence;
@@ -74,6 +75,11 @@ public sealed class AuthRepository : IAuthRepository
                   && rp.TenantId == user.TenantId
                   && p.TenantId == user.TenantId
             select p.Code).Distinct().ToListAsync(cancellationToken);
+
+        if (roles.Contains("ADMIN"))
+        {
+            permissions = PermissionCodes.All.Distinct().ToList();
+        }
 
         return new LoginUserDto(
             user.TenantId,

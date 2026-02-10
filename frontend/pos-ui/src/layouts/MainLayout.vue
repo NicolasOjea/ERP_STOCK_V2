@@ -84,7 +84,15 @@ const menuItems = [
     title: 'Productos',
     icon: 'mdi-package-variant',
     to: '/productos',
+    path: '/productos',
     permission: 'PERM_PRODUCTO_VER'
+  },
+  {
+    title: 'Proveedores',
+    icon: 'mdi-truck-outline',
+    to: { path: '/productos', query: { tab: 'proveedores' } },
+    path: '/productos',
+    permission: 'PERM_PROVEEDOR_GESTIONAR'
   },
   {
     title: 'Remitos',
@@ -125,7 +133,14 @@ const visibleItems = computed(() =>
 );
 
 const currentTitle = computed(() => {
-  const match = menuItems.find((item) => route.path.startsWith(item.to));
+  if (route.path.startsWith('/productos') && route.query.tab === 'proveedores') {
+    return 'Proveedores';
+  }
+
+  const match = menuItems.find((item) => {
+    const path = item.path || item.to;
+    return typeof path === 'string' && route.path.startsWith(path);
+  });
   return match ? match.title : 'POS';
 });
 

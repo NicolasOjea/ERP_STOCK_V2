@@ -8,21 +8,24 @@ namespace Pos.Application.UseCases.Stock;
 
 public sealed class StockService
 {
-    private const decimal DefaultToleranciaPct = 1.25m;
+    private const decimal DefaultToleranciaPct = 25m;
 
     private readonly IStockRepository _stockRepository;
     private readonly IStockMovementRepository _stockMovementRepository;
+    private readonly IRemitoPdfGenerator _remitoPdfGenerator;
     private readonly IRequestContext _requestContext;
     private readonly IAuditLogService _auditLogService;
 
     public StockService(
         IStockRepository stockRepository,
         IStockMovementRepository stockMovementRepository,
+        IRemitoPdfGenerator remitoPdfGenerator,
         IRequestContext requestContext,
         IAuditLogService auditLogService)
     {
         _stockRepository = stockRepository;
         _stockMovementRepository = stockMovementRepository;
+        _remitoPdfGenerator = remitoPdfGenerator;
         _requestContext = requestContext;
         _auditLogService = auditLogService;
     }
@@ -52,7 +55,7 @@ public sealed class StockService
                 });
         }
 
-        var hasChange = request.StockMinimo.HasValue || request.ToleranciaPct.HasValue;
+        var hasChange = request.StockMinimo.HasValue || request.StockDeseado.HasValue || request.ToleranciaPct.HasValue;
         if (!hasChange)
         {
             throw new ValidationException(
@@ -73,13 +76,23 @@ public sealed class StockService
                 });
         }
 
-        if (request.ToleranciaPct.HasValue && request.ToleranciaPct.Value <= 0)
+        if (request.StockDeseado.HasValue && request.StockDeseado.Value < 0)
         {
             throw new ValidationException(
                 "Validacion fallida.",
                 new Dictionary<string, string[]>
                 {
-                    ["toleranciaPct"] = new[] { "La tolerancia debe ser mayor a 0." }
+                    ["stockDeseado"] = new[] { "El stock deseado no puede ser negativo." }
+                });
+        }
+
+        if (request.ToleranciaPct.HasValue && request.ToleranciaPct.Value < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["toleranciaPct"] = new[] { "La tolerancia no puede ser negativa." }
                 });
         }
 
@@ -105,6 +118,7 @@ public sealed class StockService
         }
 
         var stockMinimo = request.StockMinimo ?? before?.StockMinimo ?? 0m;
+        var stockDeseado = request.StockDeseado ?? before?.StockDeseado ?? stockMinimo;
         var tolerancia = request.ToleranciaPct ?? before?.ToleranciaPct ?? DefaultToleranciaPct;
 
         var updated = await _stockRepository.UpsertStockConfigAsync(
@@ -112,6 +126,7 @@ public sealed class StockService
             sucursalId,
             productId,
             stockMinimo,
+            stockDeseado,
             tolerancia,
             DateTimeOffset.UtcNow,
             cancellationToken);
@@ -135,6 +150,25 @@ public sealed class StockService
         return await _stockRepository.GetSaldosAsync(tenantId, sucursalId, search, cancellationToken);
     }
 
+    public async Task<StockConfigDto> GetStockConfigAsync(Guid productId, CancellationToken cancellationToken)
+    {
+        if (productId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["productId"] = new[] { "El producto es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+
+        var config = await _stockRepository.GetStockConfigAsync(tenantId, sucursalId, productId, cancellationToken);
+        return config ?? new StockConfigDto(productId, sucursalId, 0m, 0m, DefaultToleranciaPct);
+    }
+
     public async Task<IReadOnlyList<StockAlertaDto>> GetAlertasAsync(CancellationToken cancellationToken)
     {
         var tenantId = EnsureTenant();
@@ -147,6 +181,67 @@ public sealed class StockService
         var tenantId = EnsureTenant();
         var sucursalId = EnsureSucursal();
         return await _stockRepository.GetSugeridoCompraAsync(tenantId, sucursalId, cancellationToken);
+    }
+
+    public async Task<byte[]> GenerarRemitoAlertasAsync(
+        StockRemitoRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request is null || request.Items is null || request.Items.Count == 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["items"] = new[] { "Debe incluir items." }
+                });
+        }
+
+        foreach (var item in request.Items)
+        {
+            if (item.ProductoId == Guid.Empty)
+            {
+                throw new ValidationException(
+                    "Validacion fallida.",
+                    new Dictionary<string, string[]>
+                    {
+                        ["items"] = new[] { "Producto invalido en items." }
+                    });
+            }
+
+            if (item.Cantidad <= 0)
+            {
+                throw new ValidationException(
+                    "Validacion fallida.",
+                    new Dictionary<string, string[]>
+                    {
+                        ["items"] = new[] { "Cantidad debe ser mayor a 0." }
+                    });
+            }
+        }
+
+        var tenantId = EnsureTenant();
+
+        var ids = request.Items.Select(i => i.ProductoId).Distinct().ToList();
+        var productos = await _stockRepository.GetProductosRemitoAsync(tenantId, ids, cancellationToken);
+        if (productos.Count == 0)
+        {
+            throw new NotFoundException("No se encontraron productos para el remito.");
+        }
+
+        var productoMap = productos.ToDictionary(p => p.ProductoId, p => p);
+        var pdfItems = request.Items
+            .Where(i => productoMap.ContainsKey(i.ProductoId))
+            .Select(i =>
+            {
+                var p = productoMap[i.ProductoId];
+                return new StockRemitoPdfItemDto(p.Nombre, p.Codigo, i.Cantidad);
+            })
+            .OrderBy(i => i.Nombre)
+            .ToList();
+
+        var data = new StockRemitoPdfDataDto(DateTimeOffset.UtcNow, pdfItems);
+        return _remitoPdfGenerator.Generate(data);
     }
 
     public async Task<StockMovimientoDto> RegistrarMovimientoAsync(

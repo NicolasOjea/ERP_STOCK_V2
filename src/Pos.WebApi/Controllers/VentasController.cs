@@ -37,6 +37,18 @@ public sealed class VentasController : ControllerBase
         return Ok(item);
     }
 
+    [HttpPost("{id:guid}/items")]
+    [Authorize(Policy = "PERM_VENTA_CREAR")]
+    [ProducesResponseType(typeof(VentaItemDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<VentaItemDto>> AddItem(
+        Guid id,
+        [FromBody] VentaItemByProductRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var item = await _ventaService.AgregarItemPorProductoAsync(id, request, cancellationToken);
+        return Ok(item);
+    }
+
     [HttpPatch("{id:guid}/items/{itemId:guid}")]
     [Authorize(Policy = "PERM_VENTA_CREAR")]
     [ProducesResponseType(typeof(VentaItemDto), StatusCodes.Status200OK)]
@@ -47,6 +59,18 @@ public sealed class VentasController : ControllerBase
         CancellationToken cancellationToken)
     {
         var item = await _ventaService.ActualizarItemAsync(id, itemId, request, cancellationToken);
+        return Ok(item);
+    }
+
+    [HttpDelete("{id:guid}/items/{itemId:guid}")]
+    [Authorize(Policy = "PERM_VENTA_CREAR")]
+    [ProducesResponseType(typeof(VentaItemDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<VentaItemDto>> RemoveItem(
+        Guid id,
+        Guid itemId,
+        CancellationToken cancellationToken)
+    {
+        var item = await _ventaService.QuitarItemAsync(id, itemId, cancellationToken);
         return Ok(item);
     }
 

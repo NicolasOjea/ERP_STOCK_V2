@@ -27,6 +27,11 @@ body {
   color: var(--pos-ink);
   font-family: "IBM Plex Sans", sans-serif;
   background: radial-gradient(circle at 20% 20%, #fff7ed, #f5f3ef 45%, #f1efe9 100%);
+  overflow-y: auto;
+}
+
+.v-main {
+  overflow-y: auto;
 }
 
 h1,

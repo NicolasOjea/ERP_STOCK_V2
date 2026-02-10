@@ -18,12 +18,14 @@ public sealed class Producto : EntityBase
         Guid? proveedorId,
         DateTimeOffset createdAtUtc,
         decimal precioBase = 1m,
+        decimal precioVenta = 1m,
         bool isActive = true)
         : base(id, tenantId, createdAtUtc)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.", nameof(name));
         if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("Sku is required.", nameof(sku));
         if (precioBase < 0) throw new ArgumentException("PrecioBase must be >= 0.", nameof(precioBase));
+        if (precioVenta < 0) throw new ArgumentException("PrecioVenta must be >= 0.", nameof(precioVenta));
 
         Name = name;
         Sku = sku;
@@ -31,6 +33,7 @@ public sealed class Producto : EntityBase
         MarcaId = marcaId;
         ProveedorId = proveedorId;
         PrecioBase = precioBase;
+        PrecioVenta = precioVenta;
         IsActive = isActive;
     }
 
@@ -40,6 +43,7 @@ public sealed class Producto : EntityBase
     public Guid? MarcaId { get; private set; }
     public Guid? ProveedorId { get; private set; }
     public decimal PrecioBase { get; private set; }
+    public decimal PrecioVenta { get; private set; }
     public bool IsActive { get; private set; }
 
     public void Update(
@@ -49,12 +53,14 @@ public sealed class Producto : EntityBase
         Guid? marcaId,
         Guid? proveedorId,
         decimal precioBase,
+        decimal precioVenta,
         bool isActive,
         DateTimeOffset updatedAtUtc)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.", nameof(name));
         if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentException("Sku is required.", nameof(sku));
         if (precioBase < 0) throw new ArgumentException("PrecioBase must be >= 0.", nameof(precioBase));
+        if (precioVenta < 0) throw new ArgumentException("PrecioVenta must be >= 0.", nameof(precioVenta));
 
         Name = name;
         Sku = sku;
@@ -62,6 +68,7 @@ public sealed class Producto : EntityBase
         MarcaId = marcaId;
         ProveedorId = proveedorId;
         PrecioBase = precioBase;
+        PrecioVenta = precioVenta;
         IsActive = isActive;
         MarkUpdated(updatedAtUtc);
     }

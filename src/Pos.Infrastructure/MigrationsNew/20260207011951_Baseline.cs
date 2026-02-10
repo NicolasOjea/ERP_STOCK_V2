@@ -648,7 +648,7 @@ namespace Pos.Infrastructure.MigrationsNew
                     ProductoId = table.Column<Guid>(type: "uuid", nullable: false),
                     SucursalId = table.Column<Guid>(type: "uuid", nullable: false),
                     StockMinimo = table.Column<decimal>(type: "numeric(18,4)", nullable: false),
-                    ToleranciaPct = table.Column<decimal>(type: "numeric(6,2)", nullable: false, defaultValue: 1.25m),
+                    ToleranciaPct = table.Column<decimal>(type: "numeric(6,2)", nullable: false, defaultValue: 25m),
                     TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),

@@ -20,7 +20,7 @@ public partial class AddStockConfigAndSaldos : Migration
                 ProductoId = table.Column<Guid>(type: "uuid", nullable: false),
                 SucursalId = table.Column<Guid>(type: "uuid", nullable: false),
                 StockMinimo = table.Column<decimal>(type: "numeric(18,4)", nullable: false),
-                ToleranciaPct = table.Column<decimal>(type: "numeric(6,2)", nullable: false, defaultValue: 1.25m),
+                ToleranciaPct = table.Column<decimal>(type: "numeric(6,2)", nullable: false, defaultValue: 25m),
                 CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                 UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                 DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)

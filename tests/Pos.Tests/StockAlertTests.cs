@@ -29,13 +29,14 @@ public sealed class StockAlertTests : IClassFixture<WebApiFactory>
             PermissionCodes.StockAjustar);
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        var proveedorId = await TestData.CreateProveedorAsync(client);
         var skuCritico = $"SKU-CRIT-{Guid.NewGuid():N}";
         var criticoResponse = await client.PostAsJsonAsync("/api/v1/productos", new ProductCreateDto(
             $"Producto Critico {Guid.NewGuid():N}",
             skuCritico,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, criticoResponse.StatusCode);
@@ -48,7 +49,7 @@ public sealed class StockAlertTests : IClassFixture<WebApiFactory>
             skuBajo,
             null,
             null,
-            null,
+            proveedorId,
             true));
 
         Assert.Equal(HttpStatusCode.Created, bajoResponse.StatusCode);
@@ -57,14 +58,14 @@ public sealed class StockAlertTests : IClassFixture<WebApiFactory>
 
         var patchCritico = new HttpRequestMessage(HttpMethod.Patch, $"/api/v1/productos/{critico!.Id}/stock-config")
         {
-            Content = JsonContent.Create(new StockConfigUpdateDto(10m, 1.25m))
+            Content = JsonContent.Create(new StockConfigUpdateDto(10m, 15m, 25m))
         };
         var patchCriticoResp = await client.SendAsync(patchCritico);
         Assert.Equal(HttpStatusCode.OK, patchCriticoResp.StatusCode);
 
         var patchBajo = new HttpRequestMessage(HttpMethod.Patch, $"/api/v1/productos/{bajo!.Id}/stock-config")
         {
-            Content = JsonContent.Create(new StockConfigUpdateDto(10m, 1.25m))
+            Content = JsonContent.Create(new StockConfigUpdateDto(10m, 15m, 25m))
         };
         var patchBajoResp = await client.SendAsync(patchBajo);
         Assert.Equal(HttpStatusCode.OK, patchBajoResp.StatusCode);

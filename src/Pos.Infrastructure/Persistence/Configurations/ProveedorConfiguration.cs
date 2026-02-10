@@ -16,6 +16,9 @@ public sealed class ProveedorConfiguration : IEntityTypeConfiguration<Proveedor>
         builder.Property(x => x.TenantId).HasColumnType("uuid");
 
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Telefono).HasMaxLength(50).IsRequired();
+        builder.Property(x => x.Cuit).HasMaxLength(20);
+        builder.Property(x => x.Direccion).HasMaxLength(250);
         builder.Property(x => x.IsActive).IsRequired();
 
         builder.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").IsRequired();

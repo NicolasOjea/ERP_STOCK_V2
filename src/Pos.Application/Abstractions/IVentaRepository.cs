@@ -27,6 +27,22 @@ public interface IVentaRepository
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
 
+    Task<VentaItemChangeDto> AddItemByProductAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        Guid ventaId,
+        Guid productId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<VentaItemDto> RemoveItemAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        Guid ventaId,
+        Guid itemId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
     Task<VentaItemChangeDto> UpdateItemCantidadAsync(
         Guid tenantId,
         Guid sucursalId,

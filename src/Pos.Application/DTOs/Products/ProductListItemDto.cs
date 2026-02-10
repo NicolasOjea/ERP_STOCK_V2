@@ -4,10 +4,13 @@ public sealed record ProductListItemDto(
     Guid Id,
     string Name,
     string Sku,
+    string Codigo,
     Guid? CategoriaId,
     string? Categoria,
     Guid? MarcaId,
     string? Marca,
     Guid? ProveedorId,
     string? Proveedor,
+    decimal PrecioBase,
+    decimal PrecioVenta,
     bool IsActive);

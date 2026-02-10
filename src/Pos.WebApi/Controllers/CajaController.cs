@@ -16,6 +16,28 @@ public sealed class CajaController : ControllerBase
         _cajaService = cajaService;
     }
 
+    [HttpGet]
+    [Authorize(Policy = "ROLE_ENCARGADO_ADMIN")]
+    [ProducesResponseType(typeof(IReadOnlyList<CajaDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CajaDto>>> GetCajas(
+        [FromQuery] bool? activo,
+        CancellationToken cancellationToken)
+    {
+        var cajas = await _cajaService.GetCajasAsync(activo, cancellationToken);
+        return Ok(cajas);
+    }
+
+    [HttpPost]
+    [Authorize(Policy = "ROLE_ENCARGADO_ADMIN")]
+    [ProducesResponseType(typeof(CajaDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<CajaDto>> CreateCaja(
+        [FromBody] CajaCreateDto request,
+        CancellationToken cancellationToken)
+    {
+        var created = await _cajaService.CreateCajaAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetCajas), new { }, created);
+    }
+
     [HttpPost("sesiones/abrir")]
     [Authorize(Policy = "ROLE_ENCARGADO_ADMIN")]
     [ProducesResponseType(typeof(CajaSesionDto), StatusCodes.Status201Created)]

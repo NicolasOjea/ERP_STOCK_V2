@@ -105,6 +105,54 @@ public sealed class VentaService
         return change.Item;
     }
 
+    public async Task<VentaItemDto> AgregarItemPorProductoAsync(
+        Guid ventaId,
+        VentaItemByProductRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (ventaId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["ventaId"] = new[] { "La venta es obligatoria." }
+                });
+        }
+
+        if (request is null || request.ProductId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["productId"] = new[] { "El producto es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+
+        var change = await _ventaRepository.AddItemByProductAsync(
+            tenantId,
+            sucursalId,
+            ventaId,
+            request.ProductId,
+            DateTimeOffset.UtcNow,
+            cancellationToken);
+
+        await _auditLogService.LogAsync(
+            "VentaItem",
+            change.Item.Id.ToString(),
+            change.Creado ? AuditAction.Create : AuditAction.Update,
+            JsonSerializer.Serialize(new { cantidad = change.CantidadAntes }),
+            JsonSerializer.Serialize(new { cantidad = change.CantidadDespues }),
+            JsonSerializer.Serialize(new { ventaId }),
+            cancellationToken);
+
+        return change.Item;
+    }
+
     public async Task<VentaItemDto> ActualizarItemAsync(
         Guid ventaId,
         Guid itemId,
@@ -141,7 +189,7 @@ public sealed class VentaService
                 });
         }
 
-        if (request.Cantidad <= 0)
+        if (request.Cantidad < 0)
         {
             throw new ValidationException(
                 "Validacion fallida.",
@@ -153,6 +201,28 @@ public sealed class VentaService
 
         var tenantId = EnsureTenant();
         var sucursalId = EnsureSucursal();
+
+        if (request.Cantidad == 0)
+        {
+            var removed = await _ventaRepository.RemoveItemAsync(
+                tenantId,
+                sucursalId,
+                ventaId,
+                itemId,
+                DateTimeOffset.UtcNow,
+                cancellationToken);
+
+            await _auditLogService.LogAsync(
+                "VentaItem",
+                removed.Id.ToString(),
+                AuditAction.Delete,
+                JsonSerializer.Serialize(new { cantidad = removed.Cantidad }),
+                null,
+                JsonSerializer.Serialize(new { ventaId }),
+                cancellationToken);
+
+            return removed;
+        }
 
         var change = await _ventaRepository.UpdateItemCantidadAsync(
             tenantId,
@@ -173,6 +243,54 @@ public sealed class VentaService
             cancellationToken);
 
         return change.Item;
+    }
+
+    public async Task<VentaItemDto> QuitarItemAsync(
+        Guid ventaId,
+        Guid itemId,
+        CancellationToken cancellationToken)
+    {
+        if (ventaId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["ventaId"] = new[] { "La venta es obligatoria." }
+                });
+        }
+
+        if (itemId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["itemId"] = new[] { "El item es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+
+        var removed = await _ventaRepository.RemoveItemAsync(
+            tenantId,
+            sucursalId,
+            ventaId,
+            itemId,
+            DateTimeOffset.UtcNow,
+            cancellationToken);
+
+        await _auditLogService.LogAsync(
+            "VentaItem",
+            removed.Id.ToString(),
+            AuditAction.Delete,
+            JsonSerializer.Serialize(new { cantidad = removed.Cantidad }),
+            null,
+            JsonSerializer.Serialize(new { ventaId }),
+            cancellationToken);
+
+        return removed;
     }
 
     public async Task<VentaDto> GetByIdAsync(Guid ventaId, CancellationToken cancellationToken)
@@ -221,6 +339,16 @@ public sealed class VentaService
                 new Dictionary<string, string[]>
                 {
                     ["request"] = new[] { "El request es obligatorio." }
+                });
+        }
+
+        if (request.CajaSesionId.HasValue && request.CajaSesionId.Value == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["cajaSesionId"] = new[] { "La sesion de caja es invalida." }
                 });
         }
 

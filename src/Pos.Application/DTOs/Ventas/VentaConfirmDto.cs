@@ -5,7 +5,7 @@ namespace Pos.Application.DTOs.Ventas;
 
 public sealed record VentaPagoRequestDto(string MedioPago, decimal Monto);
 
-public sealed record VentaConfirmRequestDto(IReadOnlyCollection<VentaPagoRequestDto> Pagos);
+public sealed record VentaConfirmRequestDto(IReadOnlyCollection<VentaPagoRequestDto> Pagos, Guid? CajaSesionId = null);
 
 public sealed record VentaPagoDto(Guid Id, string MedioPago, decimal Monto);
 

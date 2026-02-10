@@ -17,6 +17,7 @@ public sealed class CajaConfiguration : IEntityTypeConfiguration<Caja>
         builder.Property(x => x.SucursalId).HasColumnType("uuid");
 
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Numero).HasMaxLength(50);
         builder.Property(x => x.IsActive).IsRequired();
 
         builder.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").IsRequired();
@@ -25,6 +26,9 @@ public sealed class CajaConfiguration : IEntityTypeConfiguration<Caja>
 
         builder.HasIndex(x => x.TenantId);
         builder.HasIndex(x => x.SucursalId);
+        builder.HasIndex(x => new { x.TenantId, x.SucursalId, x.Numero })
+            .IsUnique()
+            .HasFilter("\"Numero\" IS NOT NULL");
 
         builder.HasOne<Tenant>()
             .WithMany()

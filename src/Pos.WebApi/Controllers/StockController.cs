@@ -75,6 +75,16 @@ public sealed class StockController : ControllerBase
         var result = await _stockService.GetSugeridoCompraAsync(cancellationToken);
         return Ok(result);
     }
+
+    [Authorize(Policy = "PERM_STOCK_AJUSTAR")]
+    [HttpPost("alertas/remito")]
+    public async Task<IActionResult> GenerarRemitoAlertas(
+        [FromBody] StockRemitoRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var pdf = await _stockService.GenerarRemitoAlertasAsync(request, cancellationToken);
+        return File(pdf, "application/pdf", "remito-alertas.pdf");
+    }
 }
 
 public sealed record StockAdjustRequest(Guid ProductId, decimal Quantity);

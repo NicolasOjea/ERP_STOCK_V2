@@ -18,7 +18,12 @@ public sealed class ProductoStockConfigConfiguration : IEntityTypeConfiguration<
         builder.Property(x => x.SucursalId).HasColumnType("uuid");
 
         builder.Property(x => x.StockMinimo).HasColumnType("numeric(18,4)").IsRequired();
-        builder.Property(x => x.ToleranciaPct).HasColumnType("numeric(6,2)").HasDefaultValue(1.25m).IsRequired();
+        builder.Property(x => x.StockDeseado)
+            .HasColumnName("stockdeseado")
+            .HasColumnType("numeric(18,4)")
+            .HasDefaultValue(0m)
+            .IsRequired();
+        builder.Property(x => x.ToleranciaPct).HasColumnType("numeric(6,2)").HasDefaultValue(25m).IsRequired();
 
         builder.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").IsRequired();
         builder.Property(x => x.UpdatedAt).HasColumnType("timestamp with time zone").IsRequired();

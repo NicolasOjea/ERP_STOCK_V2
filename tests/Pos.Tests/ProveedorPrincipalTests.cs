@@ -33,6 +33,9 @@ public sealed class ProveedorPrincipalTests : IClassFixture<WebApiFactory>
 
         var proveedorAResponse = await client.PostAsJsonAsync("/api/v1/proveedores", new ProveedorCreateDto(
             $"Proveedor A {Guid.NewGuid():N}",
+            "1133445566",
+            null,
+            null,
             true));
         Assert.Equal(HttpStatusCode.Created, proveedorAResponse.StatusCode);
         var proveedorA = await proveedorAResponse.Content.ReadFromJsonAsync<ProveedorDto>();
@@ -40,6 +43,9 @@ public sealed class ProveedorPrincipalTests : IClassFixture<WebApiFactory>
 
         var proveedorBResponse = await client.PostAsJsonAsync("/api/v1/proveedores", new ProveedorCreateDto(
             $"Proveedor B {Guid.NewGuid():N}",
+            "1133445566",
+            null,
+            null,
             true));
         Assert.Equal(HttpStatusCode.Created, proveedorBResponse.StatusCode);
         var proveedorB = await proveedorBResponse.Content.ReadFromJsonAsync<ProveedorDto>();
@@ -51,7 +57,7 @@ public sealed class ProveedorPrincipalTests : IClassFixture<WebApiFactory>
             sku,
             null,
             null,
-            null,
+            proveedorA!.Id,
             true));
         Assert.Equal(HttpStatusCode.Created, productResponse.StatusCode);
         var product = await productResponse.Content.ReadFromJsonAsync<ProductDetailDto>();

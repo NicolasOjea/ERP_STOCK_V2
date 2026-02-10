@@ -5,6 +5,19 @@ namespace Pos.Application.Abstractions;
 
 public interface ICajaRepository
 {
+    Task<IReadOnlyList<CajaDto>> GetCajasAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        bool? activo,
+        CancellationToken cancellationToken = default);
+
+    Task<CajaDto> CreateCajaAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        CajaCreateDto request,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
     Task<bool> CajaExistsAsync(Guid tenantId, Guid sucursalId, Guid cajaId, CancellationToken cancellationToken = default);
     Task<bool> HasOpenSessionAsync(Guid tenantId, Guid cajaId, CancellationToken cancellationToken = default);
 
