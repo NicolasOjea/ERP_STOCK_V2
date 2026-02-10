@@ -21,23 +21,13 @@ public static class DependencyInjection
             ?? Environment.GetEnvironmentVariable("DATABASE_URL")
             ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
 
-        if (!string.IsNullOrWhiteSpace(connectionString))
-        {
-            if (connectionString.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
-            {
-                connectionString = MapDatabaseUrl(connectionString) ?? connectionString;
-            }
-            else if (string.Equals(connectionString, "DATABASE_URL", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(connectionString, "DATABASE_PUBLIC_URL", StringComparison.OrdinalIgnoreCase))
-            {
-                connectionString = MapDatabaseUrl(databaseUrl) ?? connectionString;
-            }
-        }
-
-        if ((!string.IsNullOrWhiteSpace(connectionString) && connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
-            && !string.IsNullOrWhiteSpace(databaseUrl))
+        if (!string.IsNullOrWhiteSpace(databaseUrl))
         {
             connectionString = MapDatabaseUrl(databaseUrl) ?? connectionString;
+        }
+        else if (!string.IsNullOrWhiteSpace(connectionString) && connectionString.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
+        {
+            connectionString = MapDatabaseUrl(connectionString) ?? connectionString;
         }
 
         if (string.IsNullOrWhiteSpace(connectionString))
