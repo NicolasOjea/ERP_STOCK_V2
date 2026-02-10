@@ -16,6 +16,30 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Default");
+        var databaseUrl = configuration["DATABASE_URL"]
+            ?? configuration["DATABASE_PUBLIC_URL"]
+            ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+            ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
+
+        if (!string.IsNullOrWhiteSpace(connectionString))
+        {
+            if (connectionString.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString = MapDatabaseUrl(connectionString) ?? connectionString;
+            }
+            else if (string.Equals(connectionString, "DATABASE_URL", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(connectionString, "DATABASE_PUBLIC_URL", StringComparison.OrdinalIgnoreCase))
+            {
+                connectionString = MapDatabaseUrl(databaseUrl) ?? connectionString;
+            }
+        }
+
+        if ((!string.IsNullOrWhiteSpace(connectionString) && connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+            && !string.IsNullOrWhiteSpace(databaseUrl))
+        {
+            connectionString = MapDatabaseUrl(databaseUrl) ?? connectionString;
+        }
+
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException("Connection string 'Default' is not configured.");
@@ -46,5 +70,33 @@ public static class DependencyInjection
         services.AddScoped<IComprobanteRepository, ComprobanteRepository>();
         services.AddSingleton<IPasswordHasher, Sha256PasswordHasher>();
         return services;
+    }
+
+    private static string? MapDatabaseUrl(string? databaseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(databaseUrl))
+        {
+            return null;
+        }
+
+        if (!databaseUrl.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (!Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        var userInfo = uri.UserInfo.Split(':', 2);
+        var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+        var database = uri.AbsolutePath.TrimStart('/');
+
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port.ToString() : "5432";
+
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode=Require;Trust Server Certificate=true";
     }
 }
