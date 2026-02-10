@@ -9,19 +9,35 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Railway/Heroku-style DATABASE_URL support
 var configuredConn = builder.Configuration.GetConnectionString("Default");
-if (!string.IsNullOrWhiteSpace(configuredConn) && configuredConn.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL")
+    ?? builder.Configuration["DATABASE_URL"]
+    ?? builder.Configuration["DATABASE_PUBLIC_URL"];
+
+if (!string.IsNullOrWhiteSpace(configuredConn))
 {
-    var mapped = MapDatabaseUrl(configuredConn);
-    if (!string.IsNullOrWhiteSpace(mapped))
+    if (configuredConn.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
     {
-        builder.Configuration["ConnectionStrings:Default"] = mapped;
+        var mapped = MapDatabaseUrl(configuredConn);
+        if (!string.IsNullOrWhiteSpace(mapped))
+        {
+            builder.Configuration["ConnectionStrings:Default"] = mapped;
+        }
+    }
+    else if (string.Equals(configuredConn, "DATABASE_URL", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(configuredConn, "DATABASE_PUBLIC_URL", StringComparison.OrdinalIgnoreCase))
+    {
+        var mapped = MapDatabaseUrl(databaseUrl);
+        if (!string.IsNullOrWhiteSpace(mapped))
+        {
+            builder.Configuration["ConnectionStrings:Default"] = mapped;
+        }
     }
 }
-else if (string.IsNullOrWhiteSpace(configuredConn) || configuredConn.Contains("localhost", StringComparison.OrdinalIgnoreCase))
-{
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
-        ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
 
+if (string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Default"))
+    || builder.Configuration.GetConnectionString("Default")!.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+{
     var mapped = MapDatabaseUrl(databaseUrl);
     if (!string.IsNullOrWhiteSpace(mapped))
     {
