@@ -2,7 +2,7 @@ services:
   - type: web
     name: erp-stock-api
     env: docker
-    plan: starter
+    plan: free
     autoDeploy: true
     dockerfilePath: ./Dockerfile
     envVars:
@@ -17,6 +17,6 @@ services:
 
 databases:
   - name: erp-stock-db
-    plan: starter
+    plan: free
     databaseName: posdb
     user: posuser
