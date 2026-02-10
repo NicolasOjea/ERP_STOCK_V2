@@ -48,19 +48,19 @@ if (string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Default
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
-if (builder.Environment.IsDevelopment())
+var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>();
+if (corsOrigins == null || corsOrigins.Length == 0)
 {
-    var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
-        ?? new[] { "http://localhost:5173", "http://127.0.0.1:5173" };
-
-    builder.Services.AddCors(options =>
-    {
-        options.AddPolicy("DevCors", policy =>
-            policy.WithOrigins(corsOrigins)
-                .AllowAnyHeader()
-                .AllowAnyMethod());
-    });
+    corsOrigins = new[] { "http://localhost:5173", "http://127.0.0.1:5173" };
 }
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AppCors", policy =>
+        policy.WithOrigins(corsOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -72,11 +72,7 @@ var app = builder.Build();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 
 app.UseRouting();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseCors("DevCors");
-}
+app.UseCors("AppCors");
 
 app.UseAuthentication();
 app.UseMiddleware<RequestContextMiddleware>();
