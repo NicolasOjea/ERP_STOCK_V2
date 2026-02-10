@@ -9,7 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Railway/Heroku-style DATABASE_URL support
 var configuredConn = builder.Configuration.GetConnectionString("Default");
-if (string.IsNullOrWhiteSpace(configuredConn) || configuredConn.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+if (!string.IsNullOrWhiteSpace(configuredConn) && configuredConn.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
+{
+    var mapped = MapDatabaseUrl(configuredConn);
+    if (!string.IsNullOrWhiteSpace(mapped))
+    {
+        builder.Configuration["ConnectionStrings:Default"] = mapped;
+    }
+}
+else if (string.IsNullOrWhiteSpace(configuredConn) || configuredConn.Contains("localhost", StringComparison.OrdinalIgnoreCase))
 {
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
         ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
