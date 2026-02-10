@@ -1,3 +1,3 @@
 ﻿<Project>
-  <Import Project="../build/Pos.WebApi.props" />
+  <Import Project="..\build\Pos.WebApi.props" />
 </Project>

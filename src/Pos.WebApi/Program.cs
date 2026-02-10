@@ -7,6 +7,20 @@ using Pos.WebApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Railway/Heroku-style DATABASE_URL support
+var configuredConn = builder.Configuration.GetConnectionString("Default");
+if (string.IsNullOrWhiteSpace(configuredConn) || configuredConn.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+{
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+        ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
+
+    var mapped = MapDatabaseUrl(databaseUrl);
+    if (!string.IsNullOrWhiteSpace(mapped))
+    {
+        builder.Configuration["ConnectionStrings:Default"] = mapped;
+    }
+}
+
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
@@ -47,6 +61,34 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string? MapDatabaseUrl(string? databaseUrl)
+{
+    if (string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        return null;
+    }
+
+    if (!databaseUrl.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
+    {
+        return null;
+    }
+
+    if (!Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri))
+    {
+        return null;
+    }
+
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+    var database = uri.AbsolutePath.TrimStart('/');
+
+    var host = uri.Host;
+    var port = uri.Port > 0 ? uri.Port.ToString() : "5432";
+
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode=Require;Trust Server Certificate=true";
+}
 
 public partial class Program
 {

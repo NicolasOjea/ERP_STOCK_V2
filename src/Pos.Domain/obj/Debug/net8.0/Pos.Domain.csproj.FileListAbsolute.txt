@@ -22,3 +22,15 @@ C:/Users/Usuario/OneDrive/Desktop/programacion/ERP_STOCK_V2/src/Pos.Domain/obj/D
 /src/src/Pos.Domain/obj/Debug/net8.0/refint/Pos.Domain.dll
 /src/src/Pos.Domain/obj/Debug/net8.0/Pos.Domain.pdb
 /src/src/Pos.Domain/obj/Debug/net8.0/ref/Pos.Domain.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\bin\Debug\net8.0\Pos.Domain.deps.json
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\bin\Debug\net8.0\Pos.Domain.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\bin\Debug\net8.0\Pos.Domain.pdb
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.AssemblyInfoInputs.cache
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.AssemblyInfo.cs
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.csproj.CoreCompileInputs.cache
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.sourcelink.json
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\refint\Pos.Domain.dll
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\Pos.Domain.pdb
+C:\Users\Usuario\OneDrive\Desktop\programacion\ERP_STOCK_V2\src\Pos.Domain\obj\Debug\net8.0\ref\Pos.Domain.dll
