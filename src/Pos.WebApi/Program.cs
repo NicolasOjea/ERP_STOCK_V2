@@ -51,15 +51,30 @@ builder.Services.AddProblemDetails();
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>();
 if (corsOrigins == null || corsOrigins.Length == 0)
 {
-    corsOrigins = new[] { "http://localhost:5173", "http://127.0.0.1:5173" };
+    var raw = builder.Configuration["Cors:Origins"] ?? builder.Configuration["Cors__Origins"];
+    if (!string.IsNullOrWhiteSpace(raw))
+    {
+        corsOrigins = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
 }
+
+corsOrigins ??= new[] { "http://localhost:5173", "http://127.0.0.1:5173" };
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AppCors", policy =>
-        policy.WithOrigins(corsOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    {
+        if (corsOrigins.Contains("*"))
+        {
+            policy.AllowAnyOrigin();
+        }
+        else
+        {
+            policy.WithOrigins(corsOrigins);
+        }
+
+        policy.AllowAnyHeader().AllowAnyMethod();
+    });
 });
 
 builder.Services.AddApplication();
