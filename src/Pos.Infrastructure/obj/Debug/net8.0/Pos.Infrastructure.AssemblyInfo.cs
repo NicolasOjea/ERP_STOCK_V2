@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Pos.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+06a46de30f9269b41688de14ddc9ccb6fb330fe5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ee2664de7ee76aa4b0561bca398be95c6930e9a9")]
 [assembly: System.Reflection.AssemblyProductAttribute("Pos.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Pos.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
