@@ -162,6 +162,11 @@ const logout = () => {
 
 .pos-app-bar {
   padding: 8px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(6px);
+  background: rgba(245, 245, 242, 0.92) !important;
 }
 
 .gap-2 {

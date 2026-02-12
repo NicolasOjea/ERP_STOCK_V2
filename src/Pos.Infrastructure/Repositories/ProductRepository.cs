@@ -43,11 +43,7 @@ public sealed class ProductRepository : IProductRepository
             var term = search.Trim();
             query = query.Where(p =>
                 EF.Functions.ILike(p.Name, $"%{term}%")
-                || EF.Functions.ILike(p.Sku, $"%{term}%")
-                || _dbContext.ProductoCodigos.AsNoTracking().Any(c =>
-                    c.TenantId == tenantId
-                    && c.ProductoId == p.Id
-                    && EF.Functions.ILike(c.Codigo, $"%{term}%")));
+                || EF.Functions.ILike(p.Sku, $"%{term}%"));
         }
 
         var results = await (from p in query
@@ -83,21 +79,9 @@ public sealed class ProductRepository : IProductRepository
             return Array.Empty<ProductListItemDto>();
         }
 
-        var ids = results.Select(r => r.Id).Distinct().ToList();
-        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
-            .Where(c => c.TenantId == tenantId && ids.Contains(c.ProductoId))
-            .GroupBy(c => c.ProductoId)
-            .Select(g => new
-            {
-                ProductoId = g.Key,
-                Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault()
-            })
-            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
-
         var list = results.Select(r =>
         {
-            codeMap.TryGetValue(r.Id, out var codigo);
-            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? r.Sku : codigo!;
+            var codigoFinal = r.Sku;
             return new ProductListItemDto(
                 r.Id,
                 r.Name,
@@ -180,6 +164,14 @@ public sealed class ProductRepository : IProductRepository
             throw new ConflictException("SKU ya existe.");
         }
 
+        var codeExists = await _dbContext.ProductoCodigos.AsNoTracking()
+            .AnyAsync(c => c.TenantId == tenantId && c.Codigo == request.Sku, cancellationToken);
+
+        if (codeExists)
+        {
+            throw new ConflictException("SKU ya existe.");
+        }
+
         if (request.CategoriaId.HasValue)
         {
             var categoriaExists = await _dbContext.Categorias.AsNoTracking()
@@ -247,6 +239,8 @@ public sealed class ProductRepository : IProductRepository
         _dbContext.Productos.Add(product);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        await EnsureSkuCodeAsync(tenantId, product.Id, request.Sku, nowUtc, cancellationToken);
+
         if (request.ProveedorId.HasValue)
         {
             var relation = new ProductoProveedor(
@@ -284,6 +278,14 @@ public sealed class ProductRepository : IProductRepository
                 .AnyAsync(p => p.TenantId == tenantId && p.Sku == request.Sku, cancellationToken);
 
             if (skuExists)
+            {
+                throw new ConflictException("SKU ya existe.");
+            }
+
+            var codeExists = await _dbContext.ProductoCodigos.AsNoTracking()
+                .AnyAsync(c => c.TenantId == tenantId && c.Codigo == request.Sku && c.ProductoId != productId, cancellationToken);
+
+            if (codeExists)
             {
                 throw new ConflictException("SKU ya existe.");
             }
@@ -381,10 +383,12 @@ public sealed class ProductRepository : IProductRepository
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            await EnsureSkuCodeAsync(tenantId, productId, newSku, nowUtc, cancellationToken);
             return true;
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await EnsureSkuCodeAsync(tenantId, productId, newSku, nowUtc, cancellationToken);
         return true;
     }
 
@@ -437,6 +441,59 @@ public sealed class ProductRepository : IProductRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return dto;
+    }
+
+    public async Task<bool> DeleteAsync(
+        Guid tenantId,
+        Guid productId,
+        CancellationToken cancellationToken = default)
+    {
+        var product = await _dbContext.Productos
+            .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.Id == productId, cancellationToken);
+
+        if (product is null)
+        {
+            return false;
+        }
+
+        var hasUsage =
+            await _dbContext.VentaItems.AsNoTracking().AnyAsync(i => i.TenantId == tenantId && i.ProductoId == productId, cancellationToken)
+            || await _dbContext.StockMovimientoItems.AsNoTracking().AnyAsync(i => i.TenantId == tenantId && i.ProductoId == productId, cancellationToken)
+            || await _dbContext.RecepcionItems.AsNoTracking().AnyAsync(i => i.TenantId == tenantId && i.ProductoId == productId, cancellationToken)
+            || await _dbContext.DevolucionItems.AsNoTracking().AnyAsync(i => i.TenantId == tenantId && i.ProductoId == productId, cancellationToken)
+            || await _dbContext.OrdenCompraItems.AsNoTracking().AnyAsync(i => i.TenantId == tenantId && i.ProductoId == productId, cancellationToken)
+            || await _dbContext.PreRecepcionItems.AsNoTracking().AnyAsync(i => i.TenantId == tenantId && i.ProductoId == productId, cancellationToken);
+
+        if (hasUsage)
+        {
+            throw new ConflictException("No se puede eliminar el producto porque tiene ventas o movimientos asociados.");
+        }
+
+        var codigos = await _dbContext.ProductoCodigos
+            .Where(c => c.TenantId == tenantId && c.ProductoId == productId)
+            .ToListAsync(cancellationToken);
+        var relacionesProveedor = await _dbContext.ProductoProveedores
+            .Where(r => r.TenantId == tenantId && r.ProductoId == productId)
+            .ToListAsync(cancellationToken);
+        var configuracionesStock = await _dbContext.ProductoStockConfigs
+            .Where(c => c.TenantId == tenantId && c.ProductoId == productId)
+            .ToListAsync(cancellationToken);
+        var saldosStock = await _dbContext.StockSaldos
+            .Where(s => s.TenantId == tenantId && s.ProductoId == productId)
+            .ToListAsync(cancellationToken);
+        var listaPrecioItems = await _dbContext.ListaPrecioItems
+            .Where(i => i.TenantId == tenantId && i.ProductoId == productId)
+            .ToListAsync(cancellationToken);
+
+        _dbContext.ProductoCodigos.RemoveRange(codigos);
+        _dbContext.ProductoProveedores.RemoveRange(relacionesProveedor);
+        _dbContext.ProductoStockConfigs.RemoveRange(configuracionesStock);
+        _dbContext.StockSaldos.RemoveRange(saldosStock);
+        _dbContext.ListaPrecioItems.RemoveRange(listaPrecioItems);
+        _dbContext.Productos.Remove(product);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     public async Task<ProductProveedorDto?> AddProveedorAsync(
@@ -617,16 +674,6 @@ public sealed class ProductRepository : IProductRepository
             })
             .ToListAsync(cancellationToken);
 
-        var codes = await _dbContext.ProductoCodigos.AsNoTracking()
-            .Where(c => c.TenantId == tenantId && ids.Contains(c.ProductoId))
-            .OrderBy(c => c.Codigo)
-            .Select(c => new { c.ProductoId, c.Codigo })
-            .ToListAsync(cancellationToken);
-
-        var codeByProduct = codes
-            .GroupBy(c => c.ProductoId)
-            .ToDictionary(g => g.Key, g => g.First().Codigo);
-
         Dictionary<Guid, decimal> prices = new();
         if (!string.IsNullOrWhiteSpace(listaPrecio))
         {
@@ -645,13 +692,66 @@ public sealed class ProductRepository : IProductRepository
             .OrderBy(p => p.Name)
             .Select(p =>
             {
-                var codigo = codeByProduct.TryGetValue(p.Id, out var c) ? c : p.Sku;
+                var codigo = p.Sku;
                 var precio = prices.TryGetValue(p.Id, out var price) ? price : (p.PrecioVenta > 0 ? p.PrecioVenta : p.PrecioBase);
                 return new EtiquetaItemDto(p.Id, p.Name, precio, codigo);
             })
             .ToList();
 
         return result;
+    }
+
+    public async Task<IReadOnlyList<CodigoBarraProductoDto>> GetBarcodeDataAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = productIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return Array.Empty<CodigoBarraProductoDto>();
+        }
+
+        var rows = await (from p in _dbContext.Productos.AsNoTracking()
+                where p.TenantId == tenantId && ids.Contains(p.Id)
+                join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                    on p.ProveedorId equals pr.Id into prov
+                from pr in prov.DefaultIfEmpty()
+                select new CodigoBarraProductoDto(
+                    p.Id,
+                    p.Name,
+                    p.Sku,
+                    p.ProveedorId,
+                    pr != null ? pr.Name : null))
+            .ToListAsync(cancellationToken);
+
+        return rows;
+    }
+
+    private async Task EnsureSkuCodeAsync(
+        Guid tenantId,
+        Guid productId,
+        string sku,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var normalized = sku?.Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return;
+        }
+
+        var existsForProduct = await _dbContext.ProductoCodigos.AsNoTracking()
+            .AnyAsync(c => c.TenantId == tenantId && c.ProductoId == productId && c.Codigo == normalized, cancellationToken);
+
+        if (existsForProduct)
+        {
+            return;
+        }
+
+        var entity = new ProductoCodigo(Guid.NewGuid(), tenantId, productId, normalized, nowUtc);
+        _dbContext.ProductoCodigos.Add(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
 

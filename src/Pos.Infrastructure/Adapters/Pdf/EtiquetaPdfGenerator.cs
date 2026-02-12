@@ -28,7 +28,7 @@ public sealed class EtiquetaPdfGenerator : IEtiquetaPdfGenerator
             sb.Append("0 -14 Td\n");
             sb.Append($"(Precio: {precio}) Tj\n");
             sb.Append("0 -14 Td\n");
-            sb.Append($"(Codigo: {codigo}) Tj\n");
+            sb.Append($"(SKU: {codigo}) Tj\n");
             sb.Append("0 -24 Td\n");
         }
 

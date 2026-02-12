@@ -50,4 +50,13 @@ public sealed class ProveedoresController : ControllerBase
         var updated = await _proveedorService.UpdateAsync(id, request, cancellationToken);
         return Ok(updated);
     }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "PERM_PROVEEDOR_GESTIONAR")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _proveedorService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

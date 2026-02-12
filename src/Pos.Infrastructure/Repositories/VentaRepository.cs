@@ -28,10 +28,19 @@ public sealed class VentaRepository : IVentaRepository
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
     {
-        var venta = new Venta(Guid.NewGuid(), tenantId, sucursalId, userId, listaPrecio, nowUtc);
+        var numero = await GetNextVentaNumeroAsync(cancellationToken);
+        var venta = new Venta(Guid.NewGuid(), tenantId, sucursalId, userId, listaPrecio, nowUtc, numero);
         _dbContext.Ventas.Add(venta);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return venta.Id;
+    }
+
+    private async Task<long> GetNextVentaNumeroAsync(CancellationToken cancellationToken)
+    {
+        var next = await _dbContext.Database
+            .SqlQuery<long>($"SELECT nextval('venta_numero_seq') AS \"Value\"")
+            .SingleAsync(cancellationToken);
+        return next;
     }
 
     public async Task<VentaDto?> GetByIdAsync(
@@ -65,6 +74,7 @@ public sealed class VentaRepository : IVentaRepository
 
         return new VentaDto(
             venta.Id,
+            venta.Numero,
             venta.SucursalId,
             venta.UserId,
             venta.Estado.ToString().ToUpperInvariant(),
@@ -105,23 +115,22 @@ public sealed class VentaRepository : IVentaRepository
             throw new ConflictException("No hay caja abierta.");
         }
 
-        var product = await (from c in _dbContext.ProductoCodigos.AsNoTracking()
-                join p in _dbContext.Productos.AsNoTracking() on c.ProductoId equals p.Id
-                where c.TenantId == tenantId && p.TenantId == tenantId && c.Codigo == code
-                select new
-                {
-                    p.Id,
-                    p.Name,
-                    p.Sku,
-                    p.PrecioBase,
-                    p.PrecioVenta,
-                    Codigo = c.Codigo
-                })
+        var product = await _dbContext.Productos.AsNoTracking()
+            .Where(p => p.TenantId == tenantId && p.Sku == code)
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Sku,
+                p.PrecioBase,
+                p.PrecioVenta,
+                Codigo = p.Sku
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (product is null)
         {
-            throw new NotFoundException($"Producto no encontrado para c\u00f3digo {code}");
+            throw new NotFoundException($"Producto no encontrado para SKU {code}");
         }
 
         var item = await _dbContext.VentaItems
@@ -206,13 +215,7 @@ public sealed class VentaRepository : IVentaRepository
             throw new NotFoundException("Producto no encontrado.");
         }
 
-        var codigo = await _dbContext.ProductoCodigos.AsNoTracking()
-            .Where(c => c.TenantId == tenantId && c.ProductoId == productId)
-            .OrderBy(c => c.Codigo)
-            .Select(c => c.Codigo)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? product.Sku : codigo!;
+        var codigoFinal = product.Sku;
 
         var item = await _dbContext.VentaItems
             .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.VentaId == ventaId && i.ProductoId == product.Id, cancellationToken);
@@ -472,9 +475,10 @@ public sealed class VentaRepository : IVentaRepository
             tenantId,
             sucursalId,
             StockMovimientoTipo.SalidaVenta,
-            $"Venta {ventaId}",
+            $"Venta {venta.Numero}",
             nowUtc,
-            nowUtc);
+            nowUtc,
+            venta.Numero);
 
         _dbContext.StockMovimientos.Add(movimiento);
 
@@ -645,9 +649,10 @@ public sealed class VentaRepository : IVentaRepository
             tenantId,
             sucursalId,
             StockMovimientoTipo.EntradaAnulacion,
-            $"Anulacion venta {ventaId} - {request.Motivo}",
+            $"Anulacion venta {venta.Numero} - {request.Motivo}",
             nowUtc,
-            nowUtc);
+            nowUtc,
+            venta.Numero);
 
         _dbContext.StockMovimientos.Add(movimiento);
 

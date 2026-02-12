@@ -9,6 +9,9 @@
         <v-chip class="status-chip" color="secondary" variant="tonal">
           {{ ventaEstado }}
         </v-chip>
+        <v-chip v-if="ventaNumero" class="status-chip" color="primary" variant="tonal">
+          Venta N° {{ ventaNumero }}
+        </v-chip>
         <v-chip
           class="status-chip"
           :color="cajaStatus === 'ABIERTA' ? 'success' : 'error'"
@@ -35,7 +38,7 @@
           v-model="scanInput"
           class="scan-input pos-scan"
           :class="scanFlashClass"
-          label="Escanear codigo o SKU"
+          label="Escanear SKU"
           variant="outlined"
           density="comfortable"
           prepend-inner-icon="mdi-barcode-scan"
@@ -153,7 +156,7 @@
           </v-data-table>
 
           <div v-if="!items.length" class="text-caption text-medium-emphasis mt-3">
-            Escanea un codigo para comenzar la venta.
+            Escanea un SKU para comenzar la venta.
           </div>
         </v-card>
       </v-col>
@@ -394,7 +397,6 @@ const mediosPago = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'OTRO'];
 const headers = [
   { title: 'Producto', value: 'nombre' },
   { title: 'SKU', value: 'sku' },
-  { title: 'Codigo', value: 'codigo' },
   { title: 'Cant', value: 'cantidad', align: 'end' },
   { title: 'Precio', value: 'precioUnitario', align: 'end' },
   { title: 'Subtotal', value: 'subtotal', align: 'end' },
@@ -403,6 +405,7 @@ const headers = [
 
 const ventaId = computed(() => venta.value?.id || '');
 const ventaEstado = computed(() => venta.value?.estado || 'SIN_VENTA');
+const ventaNumero = computed(() => venta.value?.numero ?? venta.value?.Numero ?? null);
 const canEdit = computed(() => ventaEstado.value === 'BORRADOR');
 const cajaAbierta = computed(() => cajaStatus.value === 'ABIERTA');
 const canScan = computed(() => cajaAbierta.value && (ventaEstado.value === 'BORRADOR' || ventaEstado.value === 'SIN_VENTA'));
@@ -540,7 +543,6 @@ const applyItemDto = (dto) => {
     productoId: dto.productoId,
     nombre: dto.nombre,
     sku: dto.sku,
-    codigo: dto.codigo,
     cantidad: dto.cantidad,
     precioUnitario: dto.precioUnitario,
     subtotal: dto.subtotal ?? dto.cantidad * dto.precioUnitario
@@ -629,7 +631,7 @@ const handleScan = async () => {
     if (!response.ok) {
       const message = extractProblemMessage(data);
       if (response.status === 404) {
-        flash('error', 'Codigo no encontrado');
+        flash('error', 'SKU no encontrado');
       } else {
         flash('error', message);
       }
@@ -649,7 +651,7 @@ const handleScan = async () => {
 const mapProductoResults = (items) =>
   (items || []).map((item) => ({
     ...item,
-    label: `${item.name} (${item.sku})${item.codigo ? ` - ${item.codigo}` : ''}`
+    label: `${item.name} (${item.sku})`
   }));
 
 const searchProductos = (term) => {
@@ -832,6 +834,7 @@ const vuelto = (line) => {
 const confirmarVenta = async () => {
   if (!ventaId.value || confirmLoading.value) return;
   confirmLoading.value = true;
+  const ventaIdActual = ventaId.value;
 
   try {
     loadCajaSession();
@@ -853,21 +856,29 @@ const confirmarVenta = async () => {
       throw new Error(message);
     }
 
-    venta.value = data.venta || data.Venta || data;
+    let ventaConfirmada = data.venta || data.Venta || data;
+    const pagosConfirmados = data.pagos || data.Pagos || [];
+
+    if ((!ventaConfirmada?.numero && !ventaConfirmada?.Numero) && ventaIdActual) {
+      const { response: ventaResponse, data: ventaData } = await getJson(`/api/v1/ventas/${ventaIdActual}`);
+      if (ventaResponse.ok && ventaData) {
+        ventaConfirmada = ventaData;
+      }
+    }
+    venta.value = ventaConfirmada;
     clearVentaId();
-    items.value = (venta.value.items || []).map((item) => ({
-      ...item,
-      subtotal: item.subtotal ?? item.cantidad * item.precioUnitario
-    }));
+    printTicket(ventaConfirmada, pagosConfirmados);
+    flash('success', 'Venta confirmada');
+    // limpiar para nueva venta
+    venta.value = null;
+    items.value = [];
     qtyEdits.value = {};
-    items.value.forEach((item) => {
-      qtyEdits.value[item.id] = item.cantidad;
-    });
     pricing.value = null;
     cajaStatus.value = 'ABIERTA';
     dialogPagos.value = false;
     pagos.value = [];
-    flash('success', 'Venta confirmada');
+    scanInput.value = '';
+    focusScan();
   } catch (err) {
     flash('error', err?.message || 'Error al confirmar venta.');
   } finally {
@@ -940,6 +951,85 @@ const onKeydown = (event) => {
       dialogAnular.value = true;
     }
   }
+};
+
+const formatDateTime = (value) => {
+  if (!value) return '-';
+  try {
+    return new Date(value).toLocaleString('es-AR');
+  } catch {
+    return value;
+  }
+};
+
+const printTicket = (ventaData, pagosData) => {
+  if (!ventaData) return;
+  const win = window.open('', '_blank', 'width=380,height=600');
+  if (!win) return;
+
+  const itemsRows = (ventaData.items || [])
+    .map((item) => {
+      const subtotal = item.subtotal ?? item.cantidad * item.precioUnitario;
+      return `
+        <tr>
+          <td>${item.nombre}</td>
+          <td style="text-align:right">${item.cantidad}</td>
+          <td style="text-align:right">${formatMoney(item.precioUnitario)}</td>
+          <td style="text-align:right">${formatMoney(subtotal)}</td>
+        </tr>`;
+    })
+    .join('');
+
+  const pagosRows = (pagosData || [])
+    .map(
+      (pago) =>
+        `<tr><td>${pago.medioPago}</td><td style="text-align:right">${formatMoney(pago.monto)}</td></tr>`
+    )
+    .join('');
+
+  win.document.write(`
+    <html>
+      <head>
+        <title>Ticket venta</title>
+        <style>
+          body { font-family: Arial, sans-serif; font-size: 12px; padding: 10px; }
+          h1 { margin: 0 0 6px 0; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+          th, td { border-bottom: 1px dashed #ccc; padding: 4px 0; }
+          th { text-align: left; font-weight: 600; }
+        </style>
+      </head>
+      <body>
+        <h1>Ticket de venta</h1>
+        <div>Venta N°: ${ventaData.numero ?? ventaData.Numero ?? '-'}</div>
+        <div>Fecha: ${formatDateTime(ventaData.createdAt)}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th style="text-align:right">Cant</th>
+              <th style="text-align:right">Precio</th>
+              <th style="text-align:right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsRows}
+          </tbody>
+        </table>
+        <div style="margin-top:8px"><strong>Total: ${formatMoney(ventaData.totalNeto ?? totalNeto.value)}</strong></div>
+        <div style="margin-top:8px">Pagos</div>
+        <table>
+          <tbody>
+            ${pagosRows || '<tr><td>Sin detalle</td><td></td></tr>'}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  win.print();
+  setTimeout(() => win.close(), 300);
 };
 
 watch(dialogPagos, (open) => {

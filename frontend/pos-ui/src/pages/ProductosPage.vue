@@ -1,6 +1,6 @@
 <template>
   <div class="productos-page">
-    <v-tabs v-model="tab" color="primary" class="mb-4">
+    <v-tabs v-model="tab" color="primary" class="mb-4 sticky-tabs">
       <v-tab value="productos">Productos</v-tab>
       <v-tab value="proveedores">Proveedores</v-tab>
     </v-tabs>
@@ -11,16 +11,26 @@
           <div class="d-flex flex-wrap align-center gap-3">
             <div>
               <div class="text-h6">Productos</div>
-              <div class="text-caption text-medium-emphasis">ABM + stock + codigos</div>
+              <div class="text-caption text-medium-emphasis">ABM + stock</div>
             </div>
             <v-spacer />
             <v-btn color="primary" class="text-none" @click="resetForm">Nuevo</v-btn>
+            <v-btn
+              color="primary"
+              variant="tonal"
+              class="text-none"
+              :loading="barcodeLoading"
+              :disabled="products.length === 0"
+              @click="printBarcodes"
+            >
+              IMPRIMIR CODIGOS DE BARRA
+            </v-btn>
           </div>
 
           <div class="mt-4 d-flex flex-wrap align-center gap-3">
             <v-text-field
               v-model="search"
-              label="Buscar (nombre, SKU, codigo)"
+              label="Buscar (nombre o SKU)"
               variant="outlined"
               density="comfortable"
               hide-details
@@ -29,7 +39,7 @@
             />
             <v-text-field
               v-model="scanInput"
-              label="Escanear codigo"
+              label="Escanear SKU"
               variant="outlined"
               density="comfortable"
               hide-details
@@ -77,6 +87,15 @@
                   <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
                     {{ item.isActive ? 'Activo' : 'Inactivo' }}
                   </v-chip>
+                </template>
+                <template #item.actions="{ item }">
+                  <v-btn
+                    icon="mdi-delete-outline"
+                    size="small"
+                    variant="text"
+                    color="error"
+                    @click.stop="openDeleteDialog(item)"
+                  />
                 </template>
               </v-data-table>
             </v-card>
@@ -178,14 +197,6 @@
                   Precio venta calculado: {{ formatMoney(precioVentaCalculado) }}
                 </div>
                 <v-text-field
-                  v-model="form.codigoPrincipal"
-                  label="Codigo principal"
-                  variant="outlined"
-                  density="comfortable"
-                  hint="Se agrega al guardar"
-                  persistent-hint
-                />
-                <v-text-field
                   v-model="stockConfig.stockMinimo"
                   label="Stock minimo"
                   type="number"
@@ -242,24 +253,17 @@
                 />
               </v-form>
 
-              <v-divider class="my-4" />
-
-              <div class="text-subtitle-2">Codigos existentes</div>
-              <div class="text-caption text-medium-emphasis">Gestion de codigos asociados</div>
-              <v-list density="compact" class="mt-2">
-                <v-list-item v-for="code in codes" :key="code.id">
-                  <v-list-item-title>{{ code.code }}</v-list-item-title>
-                  <template #append>
-                    <v-btn
-                      icon="mdi-delete"
-                      variant="text"
-                      color="error"
-                      :disabled="!form.id"
-                      @click="removeCode(code)"
-                    />
-                  </template>
-                </v-list-item>
-              </v-list>
+              <div class="d-flex justify-end mt-4">
+                <v-btn
+                  color="primary"
+                  variant="tonal"
+                  class="text-none"
+                  :loading="saving"
+                  @click="saveFromBottom"
+                >
+                  Guardar
+                </v-btn>
+              </div>
             </v-card>
           </v-col>
         </v-row>
@@ -321,6 +325,15 @@
                   <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
                     {{ item.isActive ? 'Activo' : 'Inactivo' }}
                   </v-chip>
+                </template>
+                <template #item.actions="{ item }">
+                  <v-btn
+                    icon="mdi-delete-outline"
+                    size="small"
+                    variant="text"
+                    color="error"
+                    @click.stop="openDeleteProveedorDialog(item)"
+                  />
                 </template>
               </v-data-table>
             </v-card>
@@ -404,6 +417,35 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="dialogDeleteProduct" width="420">
+      <v-card>
+        <v-card-title>Borrar producto</v-card-title>
+        <v-card-text>
+          Vas a borrar del listado el producto
+          <strong>{{ deleteTargetName }}</strong>.
+          Esta accion es permanente. Queres continuar?
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" :disabled="deletingProduct" @click="cancelDeleteProduct">Cancelar</v-btn>
+          <v-btn color="error" :loading="deletingProduct" @click="confirmDeleteProduct">Borrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="dialogDeleteProveedor" width="420">
+      <v-card>
+        <v-card-title>Borrar proveedor</v-card-title>
+        <v-card-text>
+          Vas a borrar el proveedor <strong>{{ deleteProveedorTargetName }}</strong>.
+          Esta accion es permanente. Queres continuar?
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" :disabled="deletingProveedor" @click="cancelDeleteProveedor">Cancelar</v-btn>
+          <v-btn color="error" :loading="deletingProveedor" @click="confirmDeleteProveedor">Borrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top end" timeout="1700">
       <div class="d-flex align-center gap-2">
         <v-icon>{{ snackbar.icon }}</v-icon>
@@ -416,16 +458,18 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 import { getJson, postJson, requestJson } from '../services/apiClient';
 
 const tab = ref('productos');
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const products = ref([]);
 const loading = ref(false);
 const saving = ref(false);
-const codeLoading = ref(false);
+const barcodeLoading = ref(false);
 
 const search = ref('');
 const scanInput = ref('');
@@ -443,7 +487,6 @@ const form = reactive({
   margenPct: '30',
   precioManual: false,
   precioVentaManual: '',
-  codigoPrincipal: '',
   stockInicial: '',
   isActive: true
 });
@@ -467,10 +510,15 @@ const errors = reactive({
   toleranciaPct: ''
 });
 
-const codes = ref([]);
 
 const dialogDesactivar = ref(false);
 const pendingActive = ref(true);
+const dialogDeleteProduct = ref(false);
+const deletingProduct = ref(false);
+const deleteTarget = ref(null);
+const dialogDeleteProveedor = ref(false);
+const deletingProveedor = ref(false);
+const deleteProveedorTarget = ref(null);
 
 const snackbar = ref({
   show: false,
@@ -485,7 +533,8 @@ const headers = [
   { title: 'Proveedor', value: 'proveedor' },
   { title: 'Precio base', value: 'precioBase' },
   { title: 'Precio venta', value: 'precioVenta' },
-  { title: 'Estado', value: 'isActive' }
+  { title: 'Estado', value: 'isActive' },
+  { title: '', value: 'actions', sortable: false, align: 'end' }
 ];
 
 const proveedorHeaders = [
@@ -493,7 +542,8 @@ const proveedorHeaders = [
   { title: 'Telefono', value: 'telefono' },
   { title: 'CUIT', value: 'cuit' },
   { title: 'Direccion', value: 'direccion' },
-  { title: 'Estado', value: 'isActive' }
+  { title: 'Estado', value: 'isActive' },
+  { title: '', value: 'actions', sortable: false, align: 'end' }
 ];
 
 const proveedoresTable = ref([]);
@@ -531,6 +581,9 @@ const shortId = (value) => {
   if (!value) return 'n/a';
   return value.length > 8 ? value.slice(0, 8) : value;
 };
+
+const deleteTargetName = computed(() => deleteTarget.value?.name || 'este producto');
+const deleteProveedorTargetName = computed(() => deleteProveedorTarget.value?.name || 'este proveedor');
 
 const flash = (type, text) => {
   snackbar.value = {
@@ -727,9 +780,7 @@ const selectProduct = async (event, row) => {
     form.margenPct = Number.isFinite(margen) ? margen.toFixed(2) : '0';
     form.precioManual = false;
     form.precioVentaManual = venta ? venta.toString() : '';
-    form.codigoPrincipal = '';
     form.stockInicial = '';
-    codes.value = data.codes || [];
 
     const configResp = await getJson(`/api/v1/productos/${product.id}/stock-config`);
     if (configResp.response.ok) {
@@ -757,10 +808,8 @@ const resetForm = () => {
   form.margenPct = '30';
   form.precioManual = false;
   form.precioVentaManual = '';
-  form.codigoPrincipal = '';
   form.stockInicial = '';
   form.isActive = true;
-  codes.value = [];
   stockConfig.stockMinimo = '0';
   stockConfig.stockDeseado = '0';
   stockConfig.toleranciaPct = '25';
@@ -781,20 +830,6 @@ const saveStockConfig = async (productId) => {
   if (!response.ok) {
     throw new Error(extractProblemMessage(data));
   }
-};
-
-const maybeAddCode = async (productId) => {
-  const code = form.codigoPrincipal.trim();
-  if (!code) return;
-  const exists = codes.value.some((c) => c.code === code);
-  if (exists) return;
-  const payload = { code };
-  const { response, data } = await postJson(`/api/v1/productos/${productId}/codigos`, payload);
-  if (!response.ok) {
-    throw new Error(extractProblemMessage(data));
-  }
-  codes.value = [...codes.value, data];
-  form.codigoPrincipal = '';
 };
 
 const applyStockInicial = async (productId) => {
@@ -847,10 +882,8 @@ const saveProduct = async () => {
         throw new Error(extractProblemMessage(data));
       }
       form.id = data.id;
-      codes.value = data.codes || [];
       await saveStockConfig(form.id);
       await applyStockInicial(form.id);
-      await maybeAddCode(form.id);
       flash('success', 'Producto creado');
       await loadProducts();
       return;
@@ -873,9 +906,7 @@ const saveProduct = async () => {
       throw new Error(extractProblemMessage(data));
     }
 
-    codes.value = data.codes || [];
     await saveStockConfig(form.id);
-    await maybeAddCode(form.id);
     flash('success', 'Producto actualizado');
     await loadProducts();
   } catch (err) {
@@ -885,22 +916,61 @@ const saveProduct = async () => {
   }
 };
 
-const removeCode = async (code) => {
-  if (!form.id) return;
-  codeLoading.value = true;
+const saveFromBottom = async () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  await saveProduct();
+};
+
+const printBarcodes = async () => {
+  if (barcodeLoading.value) return;
+
+  const productoIds = products.value
+    .map((p) => p.id)
+    .filter((id) => typeof id === 'string' && id.length > 0);
+
+  if (!productoIds.length) {
+    flash('error', 'No hay productos para imprimir.');
+    return;
+  }
+
+  barcodeLoading.value = true;
   try {
-    const { response, data } = await requestJson(`/api/v1/productos/${form.id}/codigos/${code.id}`, {
-      method: 'DELETE'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5072';
+    const response = await fetch(`${baseUrl}/api/v1/etiquetas/codigos-barra/pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {})
+      },
+      body: JSON.stringify({ productoIds })
     });
+
     if (!response.ok) {
-      throw new Error(extractProblemMessage(data));
+      let message = 'No se pudo generar el PDF.';
+      try {
+        const data = await response.json();
+        message = extractProblemMessage(data);
+      } catch {
+        // ignore parse errors and keep generic message
+      }
+
+      throw new Error(message);
     }
-    codes.value = codes.value.filter((item) => item.id !== code.id);
-    flash('success', 'Codigo eliminado');
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'codigos-barra-productos.pdf';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    flash('success', 'PDF generado');
   } catch (err) {
-    flash('error', err?.message || 'No se pudo eliminar el codigo.');
+    flash('error', err?.message || 'No se pudo generar el PDF.');
   } finally {
-    codeLoading.value = false;
+    barcodeLoading.value = false;
   }
 };
 
@@ -921,6 +991,83 @@ const cancelDeactivate = () => {
 const confirmDeactivate = () => {
   dialogDesactivar.value = false;
   form.isActive = pendingActive.value;
+};
+
+const openDeleteDialog = (item) => {
+  if (!item?.id) return;
+  deleteTarget.value = item;
+  dialogDeleteProduct.value = true;
+};
+
+const cancelDeleteProduct = () => {
+  dialogDeleteProduct.value = false;
+  deleteTarget.value = null;
+};
+
+const confirmDeleteProduct = async () => {
+  if (!deleteTarget.value?.id || deletingProduct.value) return;
+
+  deletingProduct.value = true;
+  try {
+    const { response, data } = await requestJson(`/api/v1/productos/${deleteTarget.value.id}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+
+    products.value = products.value.filter((p) => p.id !== deleteTarget.value.id);
+    if (form.id === deleteTarget.value.id) {
+      resetForm();
+    }
+
+    flash('success', 'Producto borrado.');
+    cancelDeleteProduct();
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo borrar el producto.');
+  } finally {
+    deletingProduct.value = false;
+  }
+};
+
+const openDeleteProveedorDialog = (item) => {
+  if (!item?.id) return;
+  deleteProveedorTarget.value = item;
+  dialogDeleteProveedor.value = true;
+};
+
+const cancelDeleteProveedor = () => {
+  dialogDeleteProveedor.value = false;
+  deleteProveedorTarget.value = null;
+};
+
+const confirmDeleteProveedor = async () => {
+  if (!deleteProveedorTarget.value?.id || deletingProveedor.value) return;
+
+  deletingProveedor.value = true;
+  try {
+    const { response, data } = await requestJson(`/api/v1/proveedores/${deleteProveedorTarget.value.id}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+
+    proveedoresTable.value = proveedoresTable.value.filter((p) => p.id !== deleteProveedorTarget.value.id);
+    proveedoresLookup.value = proveedoresLookup.value.filter((p) => p.id !== deleteProveedorTarget.value.id);
+    if (proveedorForm.id === deleteProveedorTarget.value.id) {
+      resetProveedorForm();
+    }
+
+    flash('success', 'Proveedor borrado.');
+    cancelDeleteProveedor();
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo borrar el proveedor.');
+  } finally {
+    deletingProveedor.value = false;
+  }
 };
 
 const validateProveedorField = (field) => {
@@ -995,8 +1142,8 @@ const saveProveedor = async () => {
       if (!response.ok) {
         throw new Error(extractProblemMessage(data));
       }
-      proveedorForm.id = data.id;
       flash('success', 'Proveedor creado');
+      resetProveedorForm();
     } else {
       const { response, data } = await requestJson(`/api/v1/proveedores/${proveedorForm.id}`, {
         method: 'PATCH',
@@ -1058,5 +1205,13 @@ onMounted(() => {
 <style scoped>
 .productos-page {
   animation: fade-in 0.3s ease;
+}
+
+.sticky-tabs {
+  position: sticky;
+  top: 72px;
+  z-index: 10;
+  background: rgba(245, 245, 242, 0.95);
+  backdrop-filter: blur(4px);
 }
 </style>

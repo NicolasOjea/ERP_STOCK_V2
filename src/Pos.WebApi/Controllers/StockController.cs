@@ -50,20 +50,23 @@ public sealed class StockController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<StockMovimientoDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<StockMovimientoDto>>> GetMovimientos(
         [FromQuery] Guid? productoId,
+        [FromQuery] long? ventaNumero,
         [FromQuery] DateTimeOffset? desde,
         [FromQuery] DateTimeOffset? hasta,
         CancellationToken cancellationToken)
     {
-        var result = await _stockService.GetMovimientosAsync(productoId, desde, hasta, cancellationToken);
+        var result = await _stockService.GetMovimientosAsync(productoId, ventaNumero, desde, hasta, cancellationToken);
         return Ok(result);
     }
 
     [Authorize(Policy = "PERM_STOCK_AJUSTAR")]
     [HttpGet("alertas")]
     [ProducesResponseType(typeof(IReadOnlyList<StockAlertaDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<StockAlertaDto>>> GetAlertas(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<StockAlertaDto>>> GetAlertas(
+        [FromQuery] Guid? proveedorId,
+        CancellationToken cancellationToken)
     {
-        var result = await _stockService.GetAlertasAsync(cancellationToken);
+        var result = await _stockService.GetAlertasAsync(proveedorId, cancellationToken);
         return Ok(result);
     }
 
@@ -83,6 +86,8 @@ public sealed class StockController : ControllerBase
         CancellationToken cancellationToken)
     {
         var pdf = await _stockService.GenerarRemitoAlertasAsync(request, cancellationToken);
+        Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+        Response.Headers["Pragma"] = "no-cache";
         return File(pdf, "application/pdf", "remito-alertas.pdf");
     }
 }

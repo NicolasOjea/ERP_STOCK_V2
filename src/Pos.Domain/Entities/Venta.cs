@@ -15,7 +15,8 @@ public sealed class Venta : EntityBase
         Guid sucursalId,
         Guid? userId,
         string listaPrecio,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        long numero = 0)
         : base(id, tenantId, createdAtUtc)
     {
         if (sucursalId == Guid.Empty) throw new ArgumentException("SucursalId is required.", nameof(sucursalId));
@@ -25,10 +26,12 @@ public sealed class Venta : EntityBase
         UserId = userId;
         ListaPrecio = listaPrecio;
         Estado = VentaEstado.Borrador;
+        Numero = numero;
     }
 
     public Guid SucursalId { get; private set; }
     public Guid? UserId { get; private set; }
+    public long Numero { get; private set; }
     public string ListaPrecio { get; private set; } = string.Empty;
     public VentaEstado Estado { get; private set; }
     public decimal TotalNeto { get; private set; }

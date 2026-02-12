@@ -137,8 +137,8 @@ const setSample = () => {
       numero: 'REM-0001',
       fecha: new Date().toISOString().slice(0, 10),
       items: [
-        { codigo: '779123456001', descripcion: 'Yerba 1kg', cantidad: 2, costoUnitario: 1200 },
-        { codigo: '779123456999', descripcion: 'Producto desconocido', cantidad: 1 }
+        { sku: '779123456001', descripcion: 'Yerba 1kg', cantidad: 2, costoUnitario: 1200 },
+        { sku: '779123456999', descripcion: 'Producto desconocido', cantidad: 1 }
       ]
     },
     null,

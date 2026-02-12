@@ -27,4 +27,9 @@ public interface IProveedorRepository
         Guid tenantId,
         Guid proveedorId,
         CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteAsync(
+        Guid tenantId,
+        Guid proveedorId,
+        CancellationToken cancellationToken = default);
 }

@@ -25,4 +25,14 @@ public sealed class EtiquetasController : ControllerBase
         var pdf = await _service.GenerarPdfAsync(request, cancellationToken);
         return File(pdf, "application/pdf", "etiquetas.pdf");
     }
+
+    [HttpPost("codigos-barra/pdf")]
+    [Authorize(Policy = "PERM_PRODUCTO_VER")]
+    public async Task<IActionResult> GenerarCodigosBarraPdf(
+        [FromBody] CodigosBarraRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var pdf = await _service.GenerarCodigosBarraPdfAsync(request, cancellationToken);
+        return File(pdf, "application/pdf", "codigos-barra.pdf");
+    }
 }

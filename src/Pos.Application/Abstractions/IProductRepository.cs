@@ -1,3 +1,4 @@
+using Pos.Application.DTOs.Etiquetas;
 using Pos.Application.DTOs.Products;
 
 namespace Pos.Application.Abstractions;
@@ -39,6 +40,11 @@ public interface IProductRepository
         Guid codeId,
         CancellationToken cancellationToken = default);
 
+    Task<bool> DeleteAsync(
+        Guid tenantId,
+        Guid productId,
+        CancellationToken cancellationToken = default);
+
     Task<ProductProveedorDto?> AddProveedorAsync(
         Guid tenantId,
         Guid productId,
@@ -68,5 +74,10 @@ public interface IProductRepository
         Guid tenantId,
         IReadOnlyCollection<Guid> productIds,
         string listaPrecio,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CodigoBarraProductoDto>> GetBarcodeDataAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> productIds,
         CancellationToken cancellationToken = default);
 }

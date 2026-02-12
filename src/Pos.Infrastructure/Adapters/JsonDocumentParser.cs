@@ -90,9 +90,15 @@ public sealed class JsonDocumentParser : IDocumentParser
                 continue;
             }
 
-            var codigo = item.TryGetProperty("codigo", out var codigoProp) && codigoProp.ValueKind == JsonValueKind.String
-                ? codigoProp.GetString() ?? string.Empty
+            var sku = item.TryGetProperty("sku", out var skuProp) && skuProp.ValueKind == JsonValueKind.String
+                ? skuProp.GetString() ?? string.Empty
                 : string.Empty;
+
+            var codigo = !string.IsNullOrWhiteSpace(sku)
+                ? sku
+                : item.TryGetProperty("codigo", out var codigoProp) && codigoProp.ValueKind == JsonValueKind.String
+                    ? codigoProp.GetString() ?? string.Empty
+                    : string.Empty;
 
             var descripcion = item.TryGetProperty("descripcion", out var descProp) && descProp.ValueKind == JsonValueKind.String
                 ? descProp.GetString() ?? string.Empty

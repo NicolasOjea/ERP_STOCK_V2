@@ -65,6 +65,15 @@ public sealed class ProductosController : ControllerBase
         return Ok(updated);
     }
 
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "PERM_PRODUCTO_EDITAR")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _productService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/codigos")]
     [Authorize(Policy = "PERM_PRODUCTO_EDITAR")]
     [ProducesResponseType(typeof(ProductCodeDto), StatusCodes.Status201Created)]

@@ -169,11 +169,23 @@ public sealed class StockService
         return config ?? new StockConfigDto(productId, sucursalId, 0m, 0m, DefaultToleranciaPct);
     }
 
-    public async Task<IReadOnlyList<StockAlertaDto>> GetAlertasAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<StockAlertaDto>> GetAlertasAsync(
+        Guid? proveedorId,
+        CancellationToken cancellationToken)
     {
+        if (proveedorId.HasValue && proveedorId.Value == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es invalido." }
+                });
+        }
+
         var tenantId = EnsureTenant();
         var sucursalId = EnsureSucursal();
-        return await _stockRepository.GetAlertasAsync(tenantId, sucursalId, cancellationToken);
+        return await _stockRepository.GetAlertasAsync(tenantId, sucursalId, proveedorId, cancellationToken);
     }
 
     public async Task<StockSugeridoCompraDto> GetSugeridoCompraAsync(CancellationToken cancellationToken)
@@ -220,27 +232,67 @@ public sealed class StockService
             }
         }
 
+        if (request.ProveedorId.HasValue && request.ProveedorId.Value == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es invalido." }
+                });
+        }
+
         var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
 
         var ids = request.Items.Select(i => i.ProductoId).Distinct().ToList();
-        var productos = await _stockRepository.GetProductosRemitoAsync(tenantId, ids, cancellationToken);
+        var productos = await _stockRepository.GetProductosRemitoAsync(tenantId, ids, request.ProveedorId, cancellationToken);
         if (productos.Count == 0)
         {
             throw new NotFoundException("No se encontraron productos para el remito.");
         }
 
         var productoMap = productos.ToDictionary(p => p.ProductoId, p => p);
-        var pdfItems = request.Items
-            .Where(i => productoMap.ContainsKey(i.ProductoId))
-            .Select(i =>
-            {
-                var p = productoMap[i.ProductoId];
-                return new StockRemitoPdfItemDto(p.Nombre, p.Codigo, i.Cantidad);
-            })
-            .OrderBy(i => i.Nombre)
-            .ToList();
+        var grouped = new Dictionary<string, List<StockRemitoPdfItemDto>>();
+        var providerInfo = new Dictionary<string, StockRemitoProductoDto>();
 
-        var data = new StockRemitoPdfDataDto(DateTimeOffset.UtcNow, pdfItems);
+        foreach (var item in request.Items.Where(i => productoMap.ContainsKey(i.ProductoId)))
+        {
+            var producto = productoMap[item.ProductoId];
+            var proveedorKey = producto.ProveedorId?.ToString() ?? "SIN_PROVEEDOR";
+
+            if (!grouped.TryGetValue(proveedorKey, out var list))
+            {
+                list = new List<StockRemitoPdfItemDto>();
+                grouped[proveedorKey] = list;
+            }
+
+            list.Add(new StockRemitoPdfItemDto(producto.Nombre, producto.Sku, item.Cantidad));
+            if (!providerInfo.ContainsKey(proveedorKey))
+            {
+                providerInfo[proveedorKey] = producto;
+            }
+        }
+
+        if (grouped.Count == 0)
+        {
+            throw new NotFoundException("No se encontraron items para generar el remito.");
+        }
+
+        var proveedores = grouped.Select(pair =>
+        {
+            var info = providerInfo.GetValueOrDefault(pair.Key);
+            var nombre = info?.ProveedorNombre ?? "SIN PROVEEDOR";
+            var telefono = info?.ProveedorTelefono;
+            var cuit = info?.ProveedorCuit;
+            var direccion = info?.ProveedorDireccion;
+            var items = pair.Value.OrderBy(i => i.Nombre).ToList();
+            return new StockRemitoPdfProveedorDto(nombre, telefono, cuit, direccion, items);
+        }).OrderBy(p => p.Nombre).ToList();
+
+        var header = await _stockRepository.GetRemitoHeaderAsync(tenantId, sucursalId, cancellationToken);
+        var remitoNumero = $"R-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
+        var data = new StockRemitoPdfDataDto(DateTimeOffset.UtcNow, remitoNumero, header, proveedores);
         return _remitoPdfGenerator.Generate(data);
     }
 
@@ -350,6 +402,7 @@ public sealed class StockService
 
     public async Task<IReadOnlyList<StockMovimientoDto>> GetMovimientosAsync(
         Guid? productoId,
+        long? ventaNumero,
         DateTimeOffset? desde,
         DateTimeOffset? hasta,
         CancellationToken cancellationToken)
@@ -367,6 +420,16 @@ public sealed class StockService
                 });
         }
 
+        if (ventaNumero.HasValue && ventaNumero.Value <= 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["ventaNumero"] = new[] { "El numero de venta es invalido." }
+                });
+        }
+
         if (desde.HasValue && hasta.HasValue && desde > hasta)
         {
             throw new ValidationException(
@@ -377,7 +440,7 @@ public sealed class StockService
                 });
         }
 
-        return await _stockMovementRepository.SearchAsync(tenantId, sucursalId, productoId, desde, hasta, cancellationToken);
+        return await _stockMovementRepository.SearchAsync(tenantId, sucursalId, productoId, ventaNumero, desde, hasta, cancellationToken);
     }
 
     private Guid EnsureTenant()

@@ -31,6 +31,7 @@ public interface IStockRepository
     Task<IReadOnlyList<StockAlertaDto>> GetAlertasAsync(
         Guid tenantId,
         Guid sucursalId,
+        Guid? proveedorId,
         CancellationToken cancellationToken = default);
 
     Task<StockSugeridoCompraDto> GetSugeridoCompraAsync(
@@ -41,5 +42,11 @@ public interface IStockRepository
     Task<IReadOnlyList<StockRemitoProductoDto>> GetProductosRemitoAsync(
         Guid tenantId,
         IReadOnlyCollection<Guid> productoIds,
+        Guid? proveedorId,
+        CancellationToken cancellationToken = default);
+
+    Task<StockRemitoHeaderDto> GetRemitoHeaderAsync(
+        Guid tenantId,
+        Guid sucursalId,
         CancellationToken cancellationToken = default);
 }

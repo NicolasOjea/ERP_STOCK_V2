@@ -5,6 +5,7 @@ public sealed record StockMovimientoDto(
     string Tipo,
     string Motivo,
     DateTimeOffset Fecha,
+    long? VentaNumero,
     IReadOnlyCollection<StockMovimientoItemDto> Items);
 
 public sealed record StockMovimientoItemDto(

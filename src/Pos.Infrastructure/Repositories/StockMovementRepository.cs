@@ -131,6 +131,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
             tipo.ToString().ToUpperInvariant(),
             motivo,
             nowUtc,
+            null,
             itemDtos);
 
         return new StockMovimientoRegisterResult(dto, cambios);
@@ -140,6 +141,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
         Guid tenantId,
         Guid sucursalId,
         Guid? productoId,
+        long? ventaNumero,
         DateTimeOffset? desde,
         DateTimeOffset? hasta,
         CancellationToken cancellationToken = default)
@@ -163,6 +165,12 @@ public sealed class StockMovementRepository : IStockMovementRepository
             movimientosQuery = movimientosQuery.Where(m =>
                 _dbContext.StockMovimientoItems.AsNoTracking()
                     .Any(i => i.TenantId == tenantId && i.MovimientoId == m.Id && i.ProductoId == pid));
+        }
+
+        if (ventaNumero.HasValue)
+        {
+            var numero = ventaNumero.Value;
+            movimientosQuery = movimientosQuery.Where(m => m.VentaNumero == numero);
         }
 
         var movimientos = await movimientosQuery
@@ -208,6 +216,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
                 m.Tipo.ToString().ToUpperInvariant(),
                 m.Motivo,
                 m.Fecha,
+                m.VentaNumero,
                 list);
         }).ToList();
 

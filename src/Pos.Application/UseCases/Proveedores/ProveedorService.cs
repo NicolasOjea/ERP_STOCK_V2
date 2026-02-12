@@ -187,6 +187,41 @@ public sealed class ProveedorService
         return after;
     }
 
+    public async Task DeleteAsync(Guid proveedorId, CancellationToken cancellationToken)
+    {
+        if (proveedorId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var before = await _proveedorRepository.GetByIdAsync(tenantId, proveedorId, cancellationToken);
+        if (before is null)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        var deleted = await _proveedorRepository.DeleteAsync(tenantId, proveedorId, cancellationToken);
+        if (!deleted)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        await _auditLogService.LogAsync(
+            "Proveedor",
+            proveedorId.ToString(),
+            AuditAction.Delete,
+            JsonSerializer.Serialize(before),
+            null,
+            null,
+            cancellationToken);
+    }
+
     private Guid EnsureTenant()
     {
         if (_requestContext.TenantId == Guid.Empty)

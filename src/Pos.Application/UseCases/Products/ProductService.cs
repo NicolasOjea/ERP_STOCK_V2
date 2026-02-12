@@ -393,6 +393,41 @@ public sealed class ProductService
             cancellationToken);
     }
 
+    public async Task DeleteAsync(Guid productId, CancellationToken cancellationToken)
+    {
+        if (productId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["productId"] = new[] { "El producto es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var before = await _productRepository.GetByIdAsync(tenantId, productId, cancellationToken);
+        if (before is null)
+        {
+            throw new NotFoundException("Producto no encontrado.");
+        }
+
+        var deleted = await _productRepository.DeleteAsync(tenantId, productId, cancellationToken);
+        if (!deleted)
+        {
+            throw new NotFoundException("Producto no encontrado.");
+        }
+
+        await _auditLogService.LogAsync(
+            "Producto",
+            productId.ToString(),
+            AuditAction.Delete,
+            JsonSerializer.Serialize(before),
+            null,
+            null,
+            cancellationToken);
+    }
+
     public async Task<ProductProveedorDto> AddProveedorAsync(
         Guid productId,
         ProductProveedorCreateDto request,

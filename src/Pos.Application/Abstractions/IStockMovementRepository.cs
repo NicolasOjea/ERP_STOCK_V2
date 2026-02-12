@@ -18,6 +18,7 @@ public interface IStockMovementRepository
         Guid tenantId,
         Guid sucursalId,
         Guid? productoId,
+        long? ventaNumero,
         DateTimeOffset? desde,
         DateTimeOffset? hasta,
         CancellationToken cancellationToken = default);

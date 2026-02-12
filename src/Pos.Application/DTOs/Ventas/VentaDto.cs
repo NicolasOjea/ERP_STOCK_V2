@@ -2,6 +2,7 @@ namespace Pos.Application.DTOs.Ventas;
 
 public sealed record VentaDto(
     Guid Id,
+    long Numero,
     Guid SucursalId,
     Guid? UserId,
     string Estado,

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Pos.Application.Abstractions;
 using Pos.Application.DTOs.Proveedores;
 using Pos.Domain.Entities;
+using Pos.Domain.Exceptions;
 using Pos.Infrastructure.Persistence;
 
 namespace Pos.Infrastructure.Repositories;
@@ -99,5 +100,34 @@ public sealed class ProveedorRepository : IProveedorRepository
             .Where(p => p.TenantId == tenantId && p.Id == proveedorId)
             .Select(p => new ProveedorDto(p.Id, p.Name, p.Telefono, p.Cuit, p.Direccion, p.IsActive))
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<bool> DeleteAsync(
+        Guid tenantId,
+        Guid proveedorId,
+        CancellationToken cancellationToken = default)
+    {
+        var proveedor = await _dbContext.Proveedores
+            .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.Id == proveedorId, cancellationToken);
+
+        if (proveedor is null)
+        {
+            return false;
+        }
+
+        var hasUsage =
+            await _dbContext.Productos.AsNoTracking().AnyAsync(p => p.TenantId == tenantId && p.ProveedorId == proveedorId, cancellationToken)
+            || await _dbContext.ProductoProveedores.AsNoTracking().AnyAsync(r => r.TenantId == tenantId && r.ProveedorId == proveedorId, cancellationToken)
+            || await _dbContext.OrdenesCompra.AsNoTracking().AnyAsync(o => o.TenantId == tenantId && o.ProveedorId == proveedorId, cancellationToken)
+            || await _dbContext.DocumentosCompra.AsNoTracking().AnyAsync(d => d.TenantId == tenantId && d.ProveedorId == proveedorId, cancellationToken);
+
+        if (hasUsage)
+        {
+            throw new ConflictException("No se puede eliminar el proveedor porque tiene productos o compras asociadas.");
+        }
+
+        _dbContext.Proveedores.Remove(proveedor);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

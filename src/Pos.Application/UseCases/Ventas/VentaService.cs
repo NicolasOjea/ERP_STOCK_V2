@@ -77,7 +77,7 @@ public sealed class VentaService
                 "Validacion fallida.",
                 new Dictionary<string, string[]>
                 {
-                    ["code"] = new[] { "El codigo es obligatorio." }
+                    ["code"] = new[] { "El SKU es obligatorio." }
                 });
         }
 

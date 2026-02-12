@@ -57,7 +57,7 @@ public sealed class DocumentoCompraService
                     "Validacion fallida.",
                     new Dictionary<string, string[]>
                     {
-                        ["codigo"] = new[] { "El codigo es obligatorio." }
+                        ["sku"] = new[] { "El SKU es obligatorio." }
                     });
             }
 

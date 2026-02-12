@@ -11,9 +11,7 @@
     <ProjectReference Include="..\Pos.Application\Pos.Application.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="Migrations\**\*.cs" />
-  </ItemGroup>
+  <!-- Include EF Core migrations in build so dotnet-ef can apply them -->
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />

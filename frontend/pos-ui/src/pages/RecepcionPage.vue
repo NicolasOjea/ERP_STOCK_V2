@@ -42,7 +42,7 @@ const recepcion = ref(null);
 const headers = [
   { title: 'Producto', value: 'producto' },
   { title: 'SKU', value: 'sku' },
-  { title: 'Codigo', value: 'codigo' },
+  { title: 'SKU', value: 'codigo' },
   { title: 'Cantidad', value: 'cantidad', align: 'end' }
 ];
 

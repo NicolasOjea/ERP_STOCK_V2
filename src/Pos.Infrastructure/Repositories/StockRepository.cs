@@ -84,11 +84,7 @@ public sealed class StockRepository : IStockRepository
             var term = search.Trim();
             productsQuery = productsQuery.Where(p =>
                 EF.Functions.ILike(p.Name, $"%{term}%")
-                || EF.Functions.ILike(p.Sku, $"%{term}%")
-                || _dbContext.ProductoCodigos.AsNoTracking().Any(c =>
-                    c.TenantId == tenantId
-                    && c.ProductoId == p.Id
-                    && EF.Functions.ILike(c.Codigo, $"%{term}%")));
+                || EF.Functions.ILike(p.Sku, $"%{term}%"));
         }
 
         var products = await productsQuery
@@ -130,22 +126,10 @@ public sealed class StockRepository : IStockRepository
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
-            .Where(c => c.TenantId == tenantId && productIds.Contains(c.ProductoId))
-            .GroupBy(c => c.ProductoId)
-            .Select(g => new
-            {
-                ProductoId = g.Key,
-                Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault()
-            })
-            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
-
         var result = products.Select(p =>
         {
             var saldo = saldoByProduct[p.Id];
-            codeMap.TryGetValue(p.Id, out var codigo);
-            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? p.Sku : codigo!;
-            return new StockSaldoDto(p.Id, p.Name, p.Sku, codigoFinal, saldo.CantidadActual);
+            return new StockSaldoDto(p.Id, p.Name, p.Sku, p.Sku, saldo.CantidadActual);
         }).ToList();
 
         return result;
@@ -154,6 +138,7 @@ public sealed class StockRepository : IStockRepository
     public async Task<IReadOnlyList<StockAlertaDto>> GetAlertasAsync(
         Guid tenantId,
         Guid sucursalId,
+        Guid? proveedorId,
         CancellationToken cancellationToken = default)
     {
         var configs = await (from c in _dbContext.ProductoStockConfigs.AsNoTracking()
@@ -177,6 +162,9 @@ public sealed class StockRepository : IStockRepository
                     p.Sku,
                     ProveedorId = pp != null ? (Guid?)pp.ProveedorId : null,
                     Proveedor = pr != null ? pr.Name : null,
+                    ProveedorTelefono = pr != null ? pr.Telefono : null,
+                    ProveedorCuit = pr != null ? pr.Cuit : null,
+                    ProveedorDireccion = pr != null ? pr.Direccion : null,
                     StockActual = saldo != null ? saldo.CantidadActual : 0m,
                     c.StockMinimo,
                     c.StockDeseado,
@@ -184,12 +172,12 @@ public sealed class StockRepository : IStockRepository
                 })
             .ToListAsync(cancellationToken);
 
-        var productIds = configs.Select(c => c.Id).Distinct().ToList();
-        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
-            .Where(c => c.TenantId == tenantId && productIds.Contains(c.ProductoId))
-            .GroupBy(c => c.ProductoId)
-            .Select(g => new { ProductoId = g.Key, Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault() })
-            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
+        if (proveedorId.HasValue)
+        {
+            configs = configs
+                .Where(c => c.ProveedorId == proveedorId.Value)
+                .ToList();
+        }
 
         var alertas = new List<StockAlertaDto>();
         foreach (var item in configs)
@@ -206,14 +194,13 @@ public sealed class StockRepository : IStockRepository
                 continue;
             }
 
-            codeMap.TryGetValue(item.Id, out var codigo);
-            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? item.Sku : codigo!;
             var sugerido = Math.Max(item.StockDeseado - item.StockActual, 0m);
             alertas.Add(new StockAlertaDto(
                 item.Id,
                 item.Name,
                 item.Sku,
-                codigoFinal,
+                item.ProveedorId,
+                item.Proveedor,
                 item.StockActual,
                 item.StockMinimo,
                 item.StockDeseado,
@@ -266,17 +253,8 @@ public sealed class StockRepository : IStockRepository
             return new StockSugeridoCompraDto(0m, 0, Array.Empty<StockSugeridoProveedorDto>());
         }
 
-        var productIds = candidates.Select(c => c.Id).Distinct().ToList();
-        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
-            .Where(c => c.TenantId == tenantId && productIds.Contains(c.ProductoId))
-            .GroupBy(c => c.ProductoId)
-            .Select(g => new { ProductoId = g.Key, Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault() })
-            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
-
         var items = candidates.Select(c =>
         {
-            codeMap.TryGetValue(c.Id, out var codigo);
-            var codigoPrincipal = string.IsNullOrWhiteSpace(codigo) ? c.Sku : codigo!;
             var sugerido = Math.Max((c.StockMinimo * (1 + (c.ToleranciaPct / 100m))) - c.StockActual, 0m);
             return new
             {
@@ -286,7 +264,7 @@ public sealed class StockRepository : IStockRepository
                     c.Id,
                     c.Name,
                     c.Sku,
-                    codigoPrincipal,
+                    c.Sku,
                     c.StockActual,
                     c.StockMinimo,
                     sugerido)
@@ -317,6 +295,7 @@ public sealed class StockRepository : IStockRepository
     public async Task<IReadOnlyList<StockRemitoProductoDto>> GetProductosRemitoAsync(
         Guid tenantId,
         IReadOnlyCollection<Guid> productoIds,
+        Guid? proveedorId,
         CancellationToken cancellationToken = default)
     {
         if (productoIds.Count == 0)
@@ -324,22 +303,62 @@ public sealed class StockRepository : IStockRepository
             return Array.Empty<StockRemitoProductoDto>();
         }
 
-        var products = await _dbContext.Productos.AsNoTracking()
-            .Where(p => p.TenantId == tenantId && productoIds.Contains(p.Id))
-            .Select(p => new { p.Id, p.Name, p.Sku })
+        var products = await (from p in _dbContext.Productos.AsNoTracking()
+                join pp in _dbContext.ProductoProveedores.AsNoTracking()
+                    on new { p.Id, p.TenantId } equals new { Id = pp.ProductoId, pp.TenantId } into ppJoin
+                from pp in ppJoin.Where(x => x.EsPrincipal).DefaultIfEmpty()
+                join pr in _dbContext.Proveedores.AsNoTracking().Where(pr => pr.TenantId == tenantId)
+                    on pp.ProveedorId equals pr.Id into prov
+                from pr in prov.DefaultIfEmpty()
+                where p.TenantId == tenantId && productoIds.Contains(p.Id)
+                select new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Sku,
+                    ProveedorId = pp != null ? (Guid?)pp.ProveedorId : null,
+                    Proveedor = pr != null ? pr.Name : null,
+                    ProveedorTelefono = pr != null ? pr.Telefono : null,
+                    ProveedorCuit = pr != null ? pr.Cuit : null,
+                    ProveedorDireccion = pr != null ? pr.Direccion : null
+                })
             .ToListAsync(cancellationToken);
 
-        var codeMap = await _dbContext.ProductoCodigos.AsNoTracking()
-            .Where(c => c.TenantId == tenantId && productoIds.Contains(c.ProductoId))
-            .GroupBy(c => c.ProductoId)
-            .Select(g => new { ProductoId = g.Key, Codigo = g.OrderBy(x => x.Codigo).Select(x => x.Codigo).FirstOrDefault() })
-            .ToDictionaryAsync(x => x.ProductoId, x => x.Codigo, cancellationToken);
+        if (proveedorId.HasValue)
+        {
+            products = products
+                .Where(p => p.ProveedorId == proveedorId.Value)
+                .ToList();
+        }
 
         return products.Select(p =>
-        {
-            codeMap.TryGetValue(p.Id, out var codigo);
-            var codigoFinal = string.IsNullOrWhiteSpace(codigo) ? p.Sku : codigo!;
-            return new StockRemitoProductoDto(p.Id, p.Name, p.Sku, codigoFinal);
-        }).ToList();
+            new StockRemitoProductoDto(
+                p.Id,
+                p.Name,
+                p.Sku,
+                p.ProveedorId,
+                p.Proveedor,
+                p.ProveedorTelefono,
+                p.ProveedorCuit,
+                p.ProveedorDireccion))
+            .ToList();
+    }
+
+    public async Task<StockRemitoHeaderDto> GetRemitoHeaderAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        CancellationToken cancellationToken = default)
+    {
+        var tenantName = await _dbContext.Tenants.AsNoTracking()
+            .Where(t => t.Id == tenantId)
+            .Select(t => t.Name)
+            .FirstOrDefaultAsync(cancellationToken) ?? "Empresa";
+
+        var sucursalName = await _dbContext.Sucursales.AsNoTracking()
+            .Where(s => s.TenantId == tenantId && s.Id == sucursalId)
+            .Select(s => s.Name)
+            .FirstOrDefaultAsync(cancellationToken) ?? "Sucursal";
+
+        return new StockRemitoHeaderDto(tenantName, sucursalName);
     }
 }

@@ -14,7 +14,7 @@
         v-model="scanInput"
         class="scan-input"
         :class="scanFlashClass"
-        label="Escanear codigo o SKU"
+        label="Escanear SKU"
         variant="outlined"
         density="comfortable"
         prepend-inner-icon="mdi-barcode-scan"
@@ -147,9 +147,9 @@ const snackbar = ref({
 });
 
 const catalog = ref([
-  { id: 'p1', nombre: 'Yerba 1kg', sku: 'YER-1', codigo: '779123456001', precio: 1200, stock: 5 },
-  { id: 'p2', nombre: 'Azucar 1kg', sku: 'AZU-1', codigo: '779123456002', precio: 890, stock: 3 },
-  { id: 'p3', nombre: 'Cafe 250g', sku: 'CAF-250', codigo: '779123456003', precio: 2100, stock: 2 }
+  { id: 'p1', nombre: 'Yerba 1kg', sku: 'YER-1', precio: 1200, stock: 5 },
+  { id: 'p2', nombre: 'Azucar 1kg', sku: 'AZU-1', precio: 890, stock: 3 },
+  { id: 'p3', nombre: 'Cafe 250g', sku: 'CAF-250', precio: 2100, stock: 2 }
 ]);
 
 const items = ref([]);
@@ -157,7 +157,6 @@ const items = ref([]);
 const headers = [
   { title: 'Producto', value: 'nombre' },
   { title: 'SKU', value: 'sku' },
-  { title: 'Codigo', value: 'codigo' },
   { title: 'Cant', value: 'cantidad', align: 'end' },
   { title: 'Precio', value: 'precio', align: 'end' },
   { title: 'Subtotal', value: 'subtotal', align: 'end' }
@@ -205,11 +204,11 @@ const handleScan = () => {
   if (!code) return;
 
   const product = catalog.value.find(
-    (item) => item.codigo === code || item.sku === code
+    (item) => item.sku === code
   );
 
   if (!product) {
-    flash('error', `Codigo no encontrado: ${code}`);
+    flash('error', `SKU no encontrado: ${code}`);
     scanInput.value = '';
     focusScan();
     return;
@@ -225,7 +224,6 @@ const handleScan = () => {
       productoId: product.id,
       nombre: product.nombre,
       sku: product.sku,
-      codigo: product.codigo,
       cantidad: 1,
       precio: product.precio,
       subtotal: product.precio

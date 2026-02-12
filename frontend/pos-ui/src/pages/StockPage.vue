@@ -9,7 +9,7 @@
       </div>
     </v-card>
 
-    <v-tabs v-model="tab" color="primary" class="mb-3">
+    <v-tabs v-model="tab" color="primary" class="mb-3 sticky-tabs">
       <v-tab value="saldos">Saldos</v-tab>
       <v-tab value="movimientos">Movimientos</v-tab>
       <v-tab value="alertas">Alertas</v-tab>
@@ -127,6 +127,14 @@
               style="min-width: 240px"
             />
             <v-text-field
+              v-model="movFilters.ventaNumero"
+              label="N\u00b0 Venta"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              style="max-width: 160px"
+            />
+            <v-text-field
               v-model="movFilters.desde"
               label="Desde"
               type="date"
@@ -160,6 +168,9 @@
                   <div>
                     <div class="text-subtitle-2">{{ mov.tipo }}</div>
                     <div class="text-caption text-medium-emphasis">{{ mov.motivo }}</div>
+                    <div v-if="mov.ventaNumero" class="text-caption text-medium-emphasis">
+                      Venta N\u00b0 {{ mov.ventaNumero }}
+                    </div>
                   </div>
                   <div class="text-caption text-medium-emphasis">{{ formatDate(mov.fecha) }}</div>
                 </div>
@@ -186,6 +197,19 @@
       <v-window-item value="alertas">
         <v-card class="pos-card pa-4">
           <div class="d-flex align-center gap-3">
+            <v-autocomplete
+              v-model="alertaProveedor"
+              :items="proveedoresLookup"
+              item-title="label"
+              return-object
+              clearable
+              label="Proveedor"
+              variant="outlined"
+              density="comfortable"
+              :loading="proveedorLoading"
+              style="min-width: 260px"
+              @update:search="searchProveedores"
+            />
             <v-btn
               color="primary"
               variant="tonal"
@@ -210,6 +234,9 @@
               <v-list-item-title>{{ alerta.nombre }}</v-list-item-title>
               <v-list-item-subtitle>
                 Stock: {{ alerta.cantidadActual }} / Min: {{ alerta.stockMinimo }} / Deseado: {{ alerta.stockDeseado }}
+                <div class="text-caption text-medium-emphasis">
+                  Proveedor: {{ alerta.proveedor || 'SIN PROVEEDOR' }}
+                </div>
               </v-list-item-subtitle>
               <template #append>
                 <v-chip
@@ -248,10 +275,13 @@
           <v-list density="compact">
             <v-list-item v-for="item in remitoItems" :key="item.productoId">
               <v-list-item-title>
-                {{ item.nombre }} ({{ item.codigo }})
+                {{ item.nombre }} ({{ item.sku }})
               </v-list-item-title>
               <v-list-item-subtitle>
                 Actual: {{ item.cantidadActual }} / Deseado: {{ item.stockDeseado }}
+                <div class="text-caption text-medium-emphasis">
+                  Proveedor: {{ item.proveedor || 'SIN PROVEEDOR' }}
+                </div>
               </v-list-item-subtitle>
               <template #append>
                 <div class="d-flex align-center gap-2">
@@ -326,12 +356,16 @@ const movimientos = ref([]);
 const movLoading = ref(false);
 const movFilters = reactive({
   productoId: '',
+  ventaNumero: '',
   desde: '',
   hasta: ''
 });
 
 const alertas = ref([]);
 const alertasLoading = ref(false);
+const alertaProveedor = ref(null);
+const proveedoresLookup = ref([]);
+const proveedorLoading = ref(false);
 
 const remitoDialog = ref(false);
 const remitoItems = ref([]);
@@ -347,7 +381,6 @@ const snackbar = ref({
 const saldoHeaders = [
   { title: 'Producto', value: 'nombre' },
   { title: 'SKU', value: 'sku' },
-  { title: 'Codigo', value: 'codigo' },
   { title: 'Cantidad', value: 'cantidadActual', align: 'end' }
 ];
 
@@ -374,7 +407,13 @@ const extractProblemMessage = (data) => {
 const mapSaldoItems = (items) =>
   (items || []).map((item) => ({
     ...item,
-    label: `${item.nombre} (${item.sku})${item.codigo ? ` - ${item.codigo}` : ''}`
+    label: `${item.nombre} (${item.sku})`
+  }));
+
+const mapProveedorItems = (items) =>
+  (items || []).map((item) => ({
+    ...item,
+    label: `${item.name} (${item.telefono || 'sin tel'})`
   }));
 
 const formatDate = (value) => {
@@ -496,6 +535,9 @@ const loadMovimientos = async () => {
   try {
     const params = new URLSearchParams();
     if (movFilters.productoId.trim()) params.set('productoId', movFilters.productoId.trim());
+    if (movFilters.ventaNumero && movFilters.ventaNumero.toString().trim()) {
+      params.set('ventaNumero', movFilters.ventaNumero.toString().trim());
+    }
     if (movFilters.desde) params.set('desde', movFilters.desde);
     if (movFilters.hasta) params.set('hasta', movFilters.hasta);
 
@@ -514,7 +556,12 @@ const loadMovimientos = async () => {
 const loadAlertas = async () => {
   alertasLoading.value = true;
   try {
-    const { response, data } = await getJson('/api/v1/stock/alertas');
+    const params = new URLSearchParams();
+    if (alertaProveedor.value?.id) {
+      params.set('proveedorId', alertaProveedor.value.id);
+    }
+    const url = params.toString() ? `/api/v1/stock/alertas?${params.toString()}` : '/api/v1/stock/alertas';
+    const { response, data } = await getJson(url);
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
@@ -540,7 +587,8 @@ const openRemito = async () => {
   remitoItems.value = filtradas.map((alerta) => ({
     productoId: alerta.productoId,
     nombre: alerta.nombre,
-    codigo: alerta.codigo || alerta.sku,
+    sku: alerta.sku,
+    proveedor: alerta.proveedor,
     cantidadActual: alerta.cantidadActual,
     stockDeseado: alerta.stockDeseado ?? 0,
     cantidad: (() => {
@@ -572,13 +620,14 @@ const generarRemito = async () => {
   remitoLoading.value = true;
   try {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    const proveedorId = alertaProveedor.value?.id || null;
     const response = await fetch(`${baseUrl}/api/v1/stock/alertas/remito`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {})
       },
-      body: JSON.stringify({ items })
+      body: JSON.stringify({ items, proveedorId })
     });
 
     if (!response.ok) {
@@ -610,6 +659,24 @@ const generarRemito = async () => {
   }
 };
 
+const searchProveedores = async (term) => {
+  proveedorLoading.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (term && term.trim()) params.set('search', term.trim());
+    params.set('activo', 'true');
+    const { response, data } = await getJson(`/api/v1/proveedores?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+    proveedoresLookup.value = mapProveedorItems(data || []);
+  } catch (err) {
+    flash('error', err?.message || 'No se pudieron cargar proveedores.');
+  } finally {
+    proveedorLoading.value = false;
+  }
+};
+
 watch(tab, (value) => {
   if (value === 'saldos') {
     loadSaldos();
@@ -618,6 +685,12 @@ watch(tab, (value) => {
     loadMovimientos();
   }
   if (value === 'alertas') {
+    loadAlertas();
+  }
+});
+
+watch(alertaProveedor, () => {
+  if (tab.value === 'alertas') {
     loadAlertas();
   }
 });
@@ -641,5 +714,13 @@ onMounted(() => {
 <style scoped>
 .stock-page {
   animation: fade-in 0.3s ease;
+}
+
+.sticky-tabs {
+  position: sticky;
+  top: 72px;
+  z-index: 10;
+  background: rgba(245, 245, 242, 0.95);
+  backdrop-filter: blur(4px);
 }
 </style>

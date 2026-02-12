@@ -19,6 +19,11 @@ public sealed class VentaConfiguration : IEntityTypeConfiguration<Venta>
 
         builder.Property(x => x.ListaPrecio).HasMaxLength(120).IsRequired();
         builder.Property(x => x.Estado).HasConversion<int>().IsRequired();
+        builder.Property(x => x.Numero)
+            .HasColumnName("numero")
+            .HasColumnType("bigint")
+            .HasDefaultValueSql("nextval('venta_numero_seq')")
+            .ValueGeneratedOnAdd();
         builder.Property(x => x.TotalNeto).HasColumnType("numeric(18,4)").HasDefaultValue(0m);
         builder.Property(x => x.TotalPagos).HasColumnType("numeric(18,4)").HasDefaultValue(0m);
 
@@ -31,6 +36,7 @@ public sealed class VentaConfiguration : IEntityTypeConfiguration<Venta>
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.Estado);
         builder.HasIndex(x => x.CreatedAt);
+        builder.HasIndex(x => new { x.TenantId, x.Numero }).IsUnique();
 
         builder.HasOne<Tenant>()
             .WithMany()

@@ -146,7 +146,7 @@ const snackbar = ref({
 });
 
 const headers = [
-  { title: 'Codigo', value: 'codigo' },
+  { title: 'SKU', value: 'codigo' },
   { title: 'Descripcion', value: 'descripcion' },
   { title: 'Producto', value: 'producto' },
   { title: 'Cantidad', value: 'cantidad', align: 'end' },
