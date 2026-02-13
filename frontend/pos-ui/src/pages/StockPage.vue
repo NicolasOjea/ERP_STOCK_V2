@@ -138,7 +138,7 @@
             density="compact"
             height="520"
           >
-            <template #item.proveedor="{ item }">
+            <template v-slot:[`item.proveedor`]="{ item }">
               {{ item.proveedor || 'SIN PROVEEDOR' }}
             </template>
           </v-data-table>
@@ -960,3 +960,4 @@ onMounted(() => {
 }
 
 </style>
+

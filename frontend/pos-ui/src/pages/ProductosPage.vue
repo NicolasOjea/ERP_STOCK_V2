@@ -78,13 +78,13 @@
                 height="520"
                 @click:row="selectProduct"
               >
-                <template #item.precioBase="{ item }">
+                <template v-slot:[`item.precioBase`]="{ item }">
                   {{ formatMoney(item.precioBase) }}
                 </template>
-                <template #item.precioVenta="{ item }">
+                <template v-slot:[`item.precioVenta`]="{ item }">
                   {{ formatMoney(item.precioVenta) }}
                 </template>
-                <template #item.isActive="{ item }">
+                <template v-slot:[`item.isActive`]="{ item }">
                   <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
                     {{ item.isActive ? 'Activo' : 'Inactivo' }}
                   </v-chip>
@@ -340,7 +340,7 @@
                 height="520"
                 @click:row="selectProveedor"
               >
-                <template #item.isActive="{ item }">
+                <template v-slot:[`item.isActive`]="{ item }">
                   <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
                     {{ item.isActive ? 'Activo' : 'Inactivo' }}
                   </v-chip>
@@ -458,10 +458,10 @@
                 height="520"
                 @click:row="selectCategoria"
               >
-                <template #item.margenGananciaPct="{ item }">
+                <template v-slot:[`item.margenGananciaPct`]="{ item }">
                   {{ Number(item.margenGananciaPct || 0).toFixed(2) }}%
                 </template>
-                <template #item.isActive="{ item }">
+                <template v-slot:[`item.isActive`]="{ item }">
                   <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
                     {{ item.isActive ? 'Activo' : 'Inactivo' }}
                   </v-chip>
@@ -1441,3 +1441,4 @@ onMounted(() => {
 }
 
 </style>
+

@@ -57,7 +57,7 @@
         height="360"
         class="elevation-0"
       >
-        <template #item.subtotal="{ item }">
+        <template v-slot:[`item.subtotal`]="{ item }">
           <strong>{{ formatMoney(item.subtotal) }}</strong>
         </template>
       </v-data-table-virtual>
@@ -338,3 +338,4 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 </style>
+

@@ -37,7 +37,7 @@
         density="compact"
         height="520"
       >
-        <template #item.producto="{ item }">
+        <template v-slot:[`item.producto`]="{ item }">
           <div v-if="getRow(item).estado === 'OK'">
             <div>{{ getRow(item).producto }}</div>
             <div class="text-caption text-medium-emphasis">{{ getRow(item).productoSku }}</div>
@@ -56,7 +56,7 @@
             @update:model-value="(value) => selectProduct(getRow(item), value)"
           />
         </template>
-        <template #item.cantidad="{ item }">
+        <template v-slot:[`item.cantidad`]="{ item }">
           <v-text-field
             v-model.number="cantidadEdits[getRow(item).id]"
             type="number"
@@ -71,7 +71,7 @@
             @keyup.enter="updateCantidad(getRow(item))"
           />
         </template>
-        <template #item.estado="{ item }">
+        <template v-slot:[`item.estado`]="{ item }">
           <v-chip
             size="small"
             :color="estadoColor(getRow(item).estado)"
@@ -331,3 +331,4 @@ onMounted(() => {
   animation: fade-in 0.3s ease;
 }
 </style>
+

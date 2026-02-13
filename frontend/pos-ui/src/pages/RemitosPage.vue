@@ -93,7 +93,7 @@
         density="compact"
         height="360"
       >
-        <template #item.cantidad="{ item }">
+        <template v-slot:[`item.cantidad`]="{ item }">
           <v-text-field
             :model-value="item.cantidad"
             type="number"
@@ -105,7 +105,7 @@
             @update:model-value="(v) => updateCantidad(item.productoId, v)"
           />
         </template>
-        <template #item.actions="{ item }">
+        <template v-slot:[`item.actions`]="{ item }">
           <v-btn icon="mdi-delete-outline" size="small" variant="text" color="error" @click="removeItem(item.productoId)" />
         </template>
       </v-data-table>
@@ -518,3 +518,4 @@ onMounted(async () => {
   animation: fade-in 0.3s ease;
 }
 </style>
+

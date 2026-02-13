@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="pos-page">
     <v-card class="pos-card pa-4 mb-4">
       <div class="d-flex flex-wrap align-center gap-3">
@@ -133,7 +133,7 @@
             class="mt-3"
             height="420"
           >
-            <template #item.cantidad="{ item }">
+            <template v-slot:[`item.cantidad`]="{ item }">
               <v-text-field
                 v-model.number="qtyEdits[getRow(item).id]"
                 type="number"
@@ -148,13 +148,13 @@
                 @keyup.enter="commitQty(getRow(item))"
               />
             </template>
-            <template #item.precioUnitario="{ item }">
+            <template v-slot:[`item.precioUnitario`]="{ item }">
               {{ formatMoney(getRow(item).precioUnitario) }}
             </template>
-            <template #item.subtotal="{ item }">
+            <template v-slot:[`item.subtotal`]="{ item }">
               <strong>{{ formatMoney(getRow(item).subtotal) }}</strong>
             </template>
-            <template #item.acciones="{ item }">
+            <template v-slot:[`item.acciones`]="{ item }">
               <v-btn
                 icon="mdi-delete"
                 variant="text"
@@ -831,7 +831,7 @@ const clearCarrito = async () => {
   try {
     const currentItems = [...items.value];
     for (const item of currentItems) {
-      const { response, data } = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
+      const { response } = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
         method: 'DELETE'
       });
 
@@ -1076,7 +1076,7 @@ const printTicket = (ventaData, pagosData) => {
       </head>
       <body>
         <h1>Ticket de venta</h1>
-        <div>Venta N°: ${ventaData.numero ?? ventaData.Numero ?? '-'}</div>
+        <div>Venta Nï¿½: ${ventaData.numero ?? ventaData.Numero ?? '-'}</div>
         <div>Fecha: ${formatDateTime(ventaData.createdAt)}</div>
         <div>Facturacion: ${esFacturada ? 'FACTURADA' : 'NO FACTURADA'}</div>
         <table>
@@ -1185,7 +1185,7 @@ const printPresupuesto = (data) => {
       </head>
       <body>
         <h1>PRESUPUESTO</h1>
-        <div>Número: ${data.numero}</div>
+        <div>Nï¿½mero: ${data.numero}</div>
         <div>Fecha: ${formatDateTime(data.createdAt)}</div>
         <table>
           <thead>
@@ -1251,4 +1251,5 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 </style>
+
 

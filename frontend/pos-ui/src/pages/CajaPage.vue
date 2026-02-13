@@ -346,16 +346,16 @@
             item-key="sesionId"
             density="compact"
           >
-            <template #item.aperturaAt="{ item }">{{ formatDate(item.aperturaAt) }}</template>
-            <template #item.cierreAt="{ item }">{{ formatDate(item.cierreAt) }}</template>
-            <template #item.montoInicial="{ item }">{{ formatMoney(item.montoInicial) }}</template>
-            <template #item.totalContado="{ item }">{{ formatMoney(item.totalContado) }}</template>
-            <template #item.diferencia="{ item }">{{ formatMoney(item.diferencia) }}</template>
-            <template #item.rangoVentas="{ item }">
+            <template v-slot:[`item.aperturaAt`]="{ item }">{{ formatDate(item.aperturaAt) }}</template>
+            <template v-slot:[`item.cierreAt`]="{ item }">{{ formatDate(item.cierreAt) }}</template>
+            <template v-slot:[`item.montoInicial`]="{ item }">{{ formatMoney(item.montoInicial) }}</template>
+            <template v-slot:[`item.totalContado`]="{ item }">{{ formatMoney(item.totalContado) }}</template>
+            <template v-slot:[`item.diferencia`]="{ item }">{{ formatMoney(item.diferencia) }}</template>
+            <template v-slot:[`item.rangoVentas`]="{ item }">
               <span v-if="item.ventaDesde && item.ventaHasta">De {{ item.ventaDesde }} a {{ item.ventaHasta }}</span>
               <span v-else>-</span>
             </template>
-            <template #item.acciones="{ item }">
+            <template v-slot:[`item.acciones`]="{ item }">
               <v-btn variant="tonal" size="small" class="text-none" @click="printHistorial(item)">
                 Imprimir PDF
               </v-btn>
@@ -886,3 +886,4 @@ onMounted(() => {
   }
 }
 </style>
+
