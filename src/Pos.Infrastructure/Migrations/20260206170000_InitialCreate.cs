@@ -312,6 +312,7 @@ public partial class InitialCreate : Migration
         migrationBuilder.InsertData(
             table: "tenants",
             columns: new[] { "Id", "TenantId", "Name", "IsActive", "CreatedAt", "UpdatedAt", "DeletedAt" },
+            columnTypes: new[] { "uuid", "uuid", "character varying(200)", "boolean", "timestamp with time zone", "timestamp with time zone", "timestamp with time zone" },
             values: new object[]
             {
                 new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"),
@@ -326,6 +327,7 @@ public partial class InitialCreate : Migration
         migrationBuilder.InsertData(
             table: "sucursales",
             columns: new[] { "Id", "TenantId", "Name", "Code", "CreatedAt", "UpdatedAt", "DeletedAt" },
+            columnTypes: new[] { "uuid", "uuid", "character varying(200)", "character varying(50)", "timestamp with time zone", "timestamp with time zone", "timestamp with time zone" },
             values: new object[]
             {
                 new Guid("3b58fbc1-33f3-4e7e-9a34-9a0a3cf3c7a1"),
@@ -340,6 +342,7 @@ public partial class InitialCreate : Migration
         migrationBuilder.InsertData(
             table: "usuarios",
             columns: new[] { "Id", "TenantId", "Username", "PasswordHash", "IsActive", "CreatedAt", "UpdatedAt", "DeletedAt" },
+            columnTypes: new[] { "uuid", "uuid", "character varying(100)", "character varying(512)", "boolean", "timestamp with time zone", "timestamp with time zone", "timestamp with time zone" },
             values: new object[]
             {
                 new Guid("c5a5020f-47f8-4b57-8a2a-1f9a4c495e2b"),
@@ -355,6 +358,7 @@ public partial class InitialCreate : Migration
         migrationBuilder.InsertData(
             table: "roles",
             columns: new[] { "Id", "TenantId", "Name", "CreatedAt", "UpdatedAt", "DeletedAt" },
+            columnTypes: new[] { "uuid", "uuid", "character varying(100)", "timestamp with time zone", "timestamp with time zone", "timestamp with time zone" },
             values: new object[,]
             {
                 {
@@ -386,6 +390,7 @@ public partial class InitialCreate : Migration
         migrationBuilder.InsertData(
             table: "permisos",
             columns: new[] { "Id", "TenantId", "Code", "Description", "CreatedAt", "UpdatedAt", "DeletedAt" },
+            columnTypes: new[] { "uuid", "uuid", "character varying(120)", "character varying(300)", "timestamp with time zone", "timestamp with time zone", "timestamp with time zone" },
             values: new object[,]
             {
                 { new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a001"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), "VENTA_CREAR", "Crear venta", seedTimestamp, seedTimestamp, null },
@@ -408,6 +413,7 @@ public partial class InitialCreate : Migration
         migrationBuilder.InsertData(
             table: "usuario_roles",
             columns: new[] { "Id", "TenantId", "UserId", "RoleId", "CreatedAt", "UpdatedAt", "DeletedAt" },
+            columnTypes: new[] { "uuid", "uuid", "uuid", "uuid", "timestamp with time zone", "timestamp with time zone", "timestamp with time zone" },
             values: new object[]
             {
                 new Guid("f19b3d0a-92f1-4b7d-9d3f-05b0f8f1a101"),
@@ -422,6 +428,7 @@ public partial class InitialCreate : Migration
         migrationBuilder.InsertData(
             table: "rol_permisos",
             columns: new[] { "Id", "TenantId", "RoleId", "PermissionId", "CreatedAt", "UpdatedAt", "DeletedAt" },
+            columnTypes: new[] { "uuid", "uuid", "uuid", "uuid", "timestamp with time zone", "timestamp with time zone", "timestamp with time zone" },
             values: new object[,]
             {
                 { new Guid("a01b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c01"), new Guid("1f4f9f1a-2b7f-4d2c-8cf6-56d5b92f1a01"), new Guid("5e7f1a0b-8f29-4b6f-93a0-2f7a9f2c7b01"), new Guid("d1d7a221-4b7b-4d6f-bb2f-0a01f0e1a001"), seedTimestamp, seedTimestamp, null },
