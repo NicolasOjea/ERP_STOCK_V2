@@ -8,6 +8,7 @@ services:
       POSTGRES_PASSWORD: pospass
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts/sql/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -18,7 +19,7 @@ services:
 
   pos-api:
     build:
-      context: .
+      context: ./backend
       dockerfile: src/Pos.WebApi/Dockerfile
     container_name: pos-api
     environment:

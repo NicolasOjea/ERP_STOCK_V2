@@ -618,6 +618,7 @@ const saveSession = () => {
 
 const clearSession = () => {
   localStorage.removeItem('pos-caja-session');
+  session.value = null;
 };
 
 const loadSession = () => {
@@ -639,6 +640,13 @@ const cargarResumen = async () => {
   try {
     const { response, data } = await getJson(`/api/v1/caja/sesiones/${session.value.id}/resumen`);
     if (!response.ok) {
+      if (response.status === 404) {
+        // La sesion guardada en localStorage quedo invalida (ej. reset de BD).
+        clearSession();
+        resumen.value = null;
+        flash('error', 'La sesion de caja guardada ya no existe. Abri una nueva sesion.');
+        return;
+      }
       throw new Error(extractProblemMessage(data));
     }
     resumen.value = data;
