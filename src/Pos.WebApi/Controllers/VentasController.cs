@@ -83,6 +83,17 @@ public sealed class VentasController : ControllerBase
         return Ok(venta);
     }
 
+    [HttpGet("numero/{numero:long}/ticket")]
+    [Authorize(Policy = "PERM_VENTA_CREAR")]
+    [ProducesResponseType(typeof(VentaTicketDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<VentaTicketDto>> GetTicketByNumero(
+        long numero,
+        CancellationToken cancellationToken)
+    {
+        var ticket = await _ventaService.GetTicketByNumeroAsync(numero, cancellationToken);
+        return Ok(ticket);
+    }
+
     [HttpPost("{id:guid}/confirmar")]
     [Authorize(Policy = "PERM_VENTA_CONFIRMAR")]
     [ProducesResponseType(typeof(VentaConfirmResultDto), StatusCodes.Status200OK)]

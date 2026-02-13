@@ -39,9 +39,10 @@ public sealed class StockController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<StockSaldoDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<StockSaldoDto>>> GetSaldos(
         [FromQuery] string? search,
+        [FromQuery] Guid? proveedorId,
         CancellationToken cancellationToken)
     {
-        var result = await _stockService.GetSaldosAsync(search, cancellationToken);
+        var result = await _stockService.GetSaldosAsync(search, proveedorId, cancellationToken);
         return Ok(result);
     }
 
@@ -51,11 +52,12 @@ public sealed class StockController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<StockMovimientoDto>>> GetMovimientos(
         [FromQuery] Guid? productoId,
         [FromQuery] long? ventaNumero,
+        [FromQuery] bool? facturada,
         [FromQuery] DateTimeOffset? desde,
         [FromQuery] DateTimeOffset? hasta,
         CancellationToken cancellationToken)
     {
-        var result = await _stockService.GetMovimientosAsync(productoId, ventaNumero, desde, hasta, cancellationToken);
+        var result = await _stockService.GetMovimientosAsync(productoId, ventaNumero, facturada, desde, hasta, cancellationToken);
         return Ok(result);
     }
 

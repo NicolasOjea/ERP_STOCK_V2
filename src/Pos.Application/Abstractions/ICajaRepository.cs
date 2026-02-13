@@ -26,6 +26,7 @@ public interface ICajaRepository
         Guid sucursalId,
         Guid cajaId,
         decimal montoInicial,
+        string turno,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
 
@@ -58,5 +59,12 @@ public interface ICajaRepository
         Guid cajaSesionId,
         CajaCierreRequestDto request,
         DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CajaHistorialDto>> GetSesionesHistoricasAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
         CancellationToken cancellationToken = default);
 }

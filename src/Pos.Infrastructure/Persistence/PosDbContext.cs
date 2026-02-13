@@ -10,6 +10,7 @@ public sealed class PosDbContext : DbContext
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<EmpresaDatos> EmpresaDatos => Set<EmpresaDatos>();
     public DbSet<Sucursal> Sucursales => Set<Sucursal>();
     public DbSet<User> Usuarios => Set<User>();
     public DbSet<Role> Roles => Set<Role>();

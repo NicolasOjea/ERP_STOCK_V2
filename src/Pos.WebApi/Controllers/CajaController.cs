@@ -81,4 +81,16 @@ public sealed class CajaController : ControllerBase
         var resumen = await _cajaService.GetResumenAsync(id, cancellationToken);
         return Ok(resumen);
     }
+
+    [HttpGet("sesiones/historial")]
+    [Authorize(Policy = "ROLE_ENCARGADO_ADMIN")]
+    [ProducesResponseType(typeof(IReadOnlyList<CajaHistorialDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CajaHistorialDto>>> GetHistorial(
+        [FromQuery] DateOnly? from,
+        [FromQuery] DateOnly? to,
+        CancellationToken cancellationToken)
+    {
+        var result = await _cajaService.GetHistorialAsync(from, to, cancellationToken);
+        return Ok(result);
+    }
 }

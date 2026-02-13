@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="pos-page">
     <v-card class="pos-card pa-4 mb-4">
       <div class="d-flex flex-wrap align-center gap-3">
@@ -10,7 +10,7 @@
           {{ ventaEstado }}
         </v-chip>
         <v-chip v-if="ventaNumero" class="status-chip" color="primary" variant="tonal">
-          Venta N° {{ ventaNumero }}
+          Venta NÂ° {{ ventaNumero }}
         </v-chip>
         <v-chip
           class="status-chip"
@@ -60,7 +60,7 @@
           hide-details
           class="pos-search"
           :loading="productoSearchLoading"
-          :disabled="!cajaAbierta"
+          :disabled="!cajaAbierta && !presupuestoModo"
           @update:search="searchProductos"
           @update:modelValue="onProductoSeleccionado"
         />
@@ -80,9 +80,19 @@
           size="large"
           class="text-none"
           :loading="creatingVenta"
+          :disabled="presupuestoModo"
           @click="createVenta"
         >
           Nueva venta
+        </v-btn>
+        <v-btn
+          color="warning"
+          variant="tonal"
+          size="large"
+          class="text-none"
+          @click="togglePresupuestoMode"
+        >
+          {{ presupuestoModo ? 'Salir presupuesto' : 'Modo presupuesto' }}
         </v-btn>
       </div>
 
@@ -190,31 +200,29 @@
             size="large"
             class="text-none"
             block
-            :disabled="!canEdit || !items.length"
+            :disabled="presupuestoModo || !canEdit || !items.length"
             @click="openPagos"
           >
             Cobrar
           </v-btn>
           <v-btn
-            color="primary"
+            color="warning"
             variant="tonal"
             class="text-none mt-2"
             block
-            :loading="recalcularLoading"
-            :disabled="!canEdit || !items.length"
-            @click="recalcularPromos"
+            :disabled="!items.length"
+            @click="crearPresupuesto"
           >
-            Recalcular promos
-          </v-btn>
-          <v-btn
+            Crear presupuesto
+          </v-btn>          <v-btn
             color="error"
             variant="tonal"
             class="text-none mt-2"
             block
-            :disabled="!ventaId"
-            @click="dialogAnular = true"
+            :disabled="!ventaId || !items.length || !canEdit"
+            @click="clearCarrito"
           >
-            Anular / Cancelar
+            Cancelar / Vaciar carrito
           </v-btn>
         </v-card>
       </v-col>
@@ -280,6 +288,17 @@
           </v-btn>
 
           <v-divider class="my-3" />
+          <div class="text-body-2 mb-2">Facturacion</div>
+          <v-btn-toggle
+            v-model="facturacionSeleccion"
+            mandatory
+            divided
+            class="mb-3"
+            color="primary"
+          >
+            <v-btn :value="true" class="text-none">Facturada</v-btn>
+            <v-btn :value="false" class="text-none">No facturada</v-btn>
+          </v-btn-toggle>
           <div class="d-flex justify-space-between">
             <span>Total pagos</span>
             <strong>{{ formatMoney(totalPagos) }}</strong>
@@ -298,26 +317,6 @@
             @click="confirmarVenta"
           >
             Confirmar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="dialogAnular" width="480">
-      <v-card>
-        <v-card-title>Anular / Cancelar venta</v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="motivoAnular"
-            label="Motivo"
-            variant="outlined"
-            density="comfortable"
-          />
-        </v-card-text>
-        <v-card-actions class="justify-end">
-          <v-btn variant="text" @click="dialogAnular = false">Cancelar</v-btn>
-          <v-btn color="error" :loading="anularLoading" @click="anularVenta">
-            Anular
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -369,18 +368,16 @@ const scanInputRef = ref(null);
 const scanLoading = ref(false);
 const creatingVenta = ref(false);
 const confirmLoading = ref(false);
-const recalcularLoading = ref(false);
 const anularLoading = ref(false);
 const tableSearch = ref('');
 const dialogPagos = ref(false);
-const dialogAnular = ref(false);
 const dialogStock = ref(false);
-const motivoAnular = ref('');
 const qtyEdits = ref({});
 const productoSearch = ref('');
 const productoSearchLoading = ref(false);
 const productosEncontrados = ref([]);
 const productoSeleccionado = ref(null);
+const presupuestoModo = ref(false);
 const POS_VENTA_KEY = 'pos-venta-id';
 let productoSearchTimer = null;
 
@@ -392,7 +389,8 @@ const snackbar = ref({
 });
 
 const pagos = ref([]);
-const mediosPago = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'OTRO'];
+const facturacionSeleccion = ref(null);
+const mediosPago = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'APLICATIVO', 'OTRO'];
 
 const headers = [
   { title: 'Producto', value: 'nombre' },
@@ -406,9 +404,12 @@ const headers = [
 const ventaId = computed(() => venta.value?.id || '');
 const ventaEstado = computed(() => venta.value?.estado || 'SIN_VENTA');
 const ventaNumero = computed(() => venta.value?.numero ?? venta.value?.Numero ?? null);
-const canEdit = computed(() => ventaEstado.value === 'BORRADOR');
+const canEdit = computed(() => presupuestoModo.value || ventaEstado.value === 'BORRADOR');
 const cajaAbierta = computed(() => cajaStatus.value === 'ABIERTA');
-const canScan = computed(() => cajaAbierta.value && (ventaEstado.value === 'BORRADOR' || ventaEstado.value === 'SIN_VENTA'));
+const canScan = computed(() => {
+  if (presupuestoModo.value) return true;
+  return cajaAbierta.value && (ventaEstado.value === 'BORRADOR' || ventaEstado.value === 'SIN_VENTA');
+});
 
 const totalBruto = computed(() => {
   if (pricing.value?.totalBruto != null) return pricing.value.totalBruto;
@@ -431,9 +432,11 @@ const totalPagos = computed(() => pagos.value.reduce((acc, line) => acc + (line.
 const diferenciaPagos = computed(() => totalPagos.value - totalNeto.value);
 
 const canConfirm = computed(() => {
+  if (presupuestoModo.value) return false;
   if (!canEdit.value || !items.value.length) return false;
   if (totalNeto.value <= 0) return false;
   if (Math.abs(diferenciaPagos.value) > 0.0001) return false;
+  if (facturacionSeleccion.value === null) return false;
   return true;
 });
 
@@ -531,9 +534,35 @@ const extractProblemMessage = (data) => {
 };
 
 const ensureVenta = async () => {
+  if (presupuestoModo.value) return '';
   if (ventaId.value) return ventaId.value;
   await createVenta();
   return ventaId.value;
+};
+
+const addLocalItem = (product) => {
+  const index = items.value.findIndex((item) => item.productoId === product.id);
+  if (index >= 0) {
+    const nextQty = items.value[index].cantidad + 1;
+    items.value[index].cantidad = nextQty;
+    items.value[index].subtotal = nextQty * items.value[index].precioUnitario;
+    qtyEdits.value[items.value[index].id] = nextQty;
+    return;
+  }
+
+  const precio = Number(product.precioVenta ?? 0);
+  const localId = `pres-${product.id}`;
+  const item = {
+    id: localId,
+    productoId: product.id,
+    nombre: product.name,
+    sku: product.sku,
+    cantidad: 1,
+    precioUnitario: precio,
+    subtotal: precio
+  };
+  items.value.unshift(item);
+  qtyEdits.value[item.id] = item.cantidad;
 };
 
 const applyItemDto = (dto) => {
@@ -558,6 +587,7 @@ const applyItemDto = (dto) => {
 };
 
 const createVenta = async () => {
+  if (presupuestoModo.value) return;
   if (creatingVenta.value) return;
   creatingVenta.value = true;
   try {
@@ -577,6 +607,7 @@ const createVenta = async () => {
     });
     pricing.value = null;
     pagos.value = [];
+    facturacionSeleccion.value = null;
     flash('success', 'Venta creada');
   } catch (err) {
     flash('error', err?.message || 'No se pudo crear la venta.');
@@ -615,18 +646,38 @@ const restoreVenta = async () => {
 const handleScan = async () => {
   const code = scanInput.value.trim();
   if (!code || scanLoading.value || !canScan.value) return;
-  if (!cajaAbierta.value) {
+  if (!presupuestoModo.value && !cajaAbierta.value) {
     flash('error', 'Caja cerrada');
     return;
   }
-
-  const id = await ensureVenta();
-  if (!id) return;
 
   scanLoading.value = true;
   scanInput.value = '';
 
   try {
+    if (presupuestoModo.value) {
+      const params = new URLSearchParams();
+      params.set('search', code);
+      params.set('activo', 'true');
+      const searchResp = await getJson(`/api/v1/productos?${params.toString()}`);
+      if (!searchResp.response.ok) {
+        throw new Error(extractProblemMessage(searchResp.data));
+      }
+      const list = searchResp.data || [];
+      const exact = list.find((p) => (p.sku || '').trim().toLowerCase() === code.toLowerCase());
+      const product = exact || list[0];
+      if (!product) {
+        flash('error', 'SKU no encontrado');
+        return;
+      }
+      addLocalItem(product);
+      flash('success', `Agregado: ${product.name}`);
+      return;
+    }
+
+    const id = await ensureVenta();
+    if (!id) return;
+
     const { response, data } = await postJson(`/api/v1/ventas/${id}/items/scan`, { code });
     if (!response.ok) {
       const message = extractProblemMessage(data);
@@ -655,7 +706,7 @@ const mapProductoResults = (items) =>
   }));
 
 const searchProductos = (term) => {
-  if (!cajaAbierta.value) {
+  if (!cajaAbierta.value && !presupuestoModo.value) {
     productosEncontrados.value = [];
     return;
   }
@@ -687,10 +738,20 @@ const searchProductos = (term) => {
 
 const onProductoSeleccionado = async (producto) => {
   if (!producto?.id) return;
-  if (!cajaAbierta.value) {
+  if (!presupuestoModo.value && !cajaAbierta.value) {
     flash('error', 'Caja cerrada');
     return;
   }
+
+  if (presupuestoModo.value) {
+    addLocalItem(producto);
+    productoSeleccionado.value = null;
+    productoSearch.value = '';
+    productosEncontrados.value = [];
+    focusScan();
+    return;
+  }
+
   const id = await ensureVenta();
   if (!id) return;
 
@@ -716,7 +777,14 @@ const onProductoSeleccionado = async (producto) => {
 };
 
 const removeItem = async (item) => {
-  if (!ventaId.value || !canEdit.value) return;
+  if (!canEdit.value) return;
+  if (presupuestoModo.value) {
+    items.value = items.value.filter((i) => i.id !== item.id);
+    delete qtyEdits.value[item.id];
+    flash('success', 'Item eliminado');
+    return;
+  }
+  if (!ventaId.value) return;
   try {
     const { response, data } = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
       method: 'DELETE'
@@ -746,15 +814,69 @@ const removeItem = async (item) => {
   }
 };
 
+const clearCarrito = async () => {
+  if (!canEdit.value || !items.value.length || anularLoading.value) return;
+
+  if (presupuestoModo.value) {
+    items.value = [];
+    qtyEdits.value = {};
+    pricing.value = null;
+    flash('success', 'Presupuesto limpiado');
+    focusScan();
+    return;
+  }
+  if (!ventaId.value) return;
+
+  anularLoading.value = true;
+  try {
+    const currentItems = [...items.value];
+    for (const item of currentItems) {
+      const { response, data } = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const fallback = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ cantidad: 0 })
+        });
+        if (!fallback.response.ok) {
+          throw new Error(extractProblemMessage(fallback.data));
+        }
+      }
+    }
+
+    items.value = [];
+    qtyEdits.value = {};
+    pricing.value = null;
+    flash('success', 'Carrito vaciado');
+    focusScan();
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo vaciar el carrito.');
+  } finally {
+    anularLoading.value = false;
+  }
+};
+
 const commitQty = async (item) => {
   const cantidad = Number(qtyEdits.value[item.id]);
-  if (!ventaId.value || !canEdit.value) return;
+  if (!canEdit.value) return;
   if (!cantidad || cantidad <= 0 || Number.isNaN(cantidad)) {
     qtyEdits.value[item.id] = item.cantidad;
     flash('error', 'Cantidad invalida');
     return;
   }
   if (cantidad === item.cantidad) return;
+
+  if (presupuestoModo.value) {
+    const rowIndex = items.value.findIndex((row) => row.id === item.id);
+    if (rowIndex >= 0) {
+      items.value[rowIndex].cantidad = cantidad;
+      items.value[rowIndex].subtotal = cantidad * items.value[rowIndex].precioUnitario;
+    }
+    return;
+  }
+  if (!ventaId.value) return;
 
   try {
     const { response, data } = await requestJson(`/api/v1/ventas/${ventaId.value}/items/${item.id}`, {
@@ -776,28 +898,8 @@ const commitQty = async (item) => {
   }
 };
 
-const recalcularPromos = async () => {
-  if (!ventaId.value || recalcularLoading.value) return;
-  recalcularLoading.value = true;
-  try {
-    const { response, data } = await postJson(`/api/v1/ventas/${ventaId.value}/recalcular`, {});
-    if (!response.ok) {
-      if (response.status === 404) {
-        flash('error', 'Recalculo no disponible.');
-        return;
-      }
-      throw new Error(extractProblemMessage(data));
-    }
-    pricing.value = data;
-    flash('success', 'Promos recalculadas');
-  } catch (err) {
-    flash('error', err?.message || 'Error al recalcular.');
-  } finally {
-    recalcularLoading.value = false;
-  }
-};
-
 const openPagos = () => {
+  if (presupuestoModo.value) return;
   dialogPagos.value = true;
   if (!pagos.value.length) {
     pagos.value = [
@@ -832,17 +934,23 @@ const vuelto = (line) => {
 };
 
 const confirmarVenta = async () => {
+  if (presupuestoModo.value) return;
   if (!ventaId.value || confirmLoading.value) return;
   confirmLoading.value = true;
   const ventaIdActual = ventaId.value;
 
   try {
+    if (facturacionSeleccion.value === null) {
+      flash('error', 'Selecciona si la venta es facturada o no facturada.');
+      return;
+    }
     loadCajaSession();
     const payload = {
       pagos: pagos.value
         .filter((line) => line.medioPago && line.monto > 0)
         .map((line) => ({ medioPago: line.medioPago, monto: line.monto })),
-      cajaSesionId: cajaSessionId.value || null
+      cajaSesionId: cajaSessionId.value || null,
+      facturada: facturacionSeleccion.value
     };
 
     const { response, data } = await postJson(`/api/v1/ventas/${ventaId.value}/confirmar`, payload);
@@ -877,53 +985,13 @@ const confirmarVenta = async () => {
     cajaStatus.value = 'ABIERTA';
     dialogPagos.value = false;
     pagos.value = [];
+    facturacionSeleccion.value = null;
     scanInput.value = '';
     focusScan();
   } catch (err) {
     flash('error', err?.message || 'Error al confirmar venta.');
   } finally {
     confirmLoading.value = false;
-  }
-};
-
-const anularVenta = async () => {
-  if (!ventaId.value || anularLoading.value) return;
-  if (!motivoAnular.value.trim()) {
-    flash('error', 'Motivo obligatorio');
-    return;
-  }
-
-  anularLoading.value = true;
-  try {
-    const { response, data } = await postJson(`/api/v1/ventas/${ventaId.value}/anular`, {
-      motivo: motivoAnular.value.trim()
-    });
-    if (!response.ok) {
-      const message = extractProblemMessage(data);
-      if (message.toLowerCase().includes('caja')) {
-        cajaStatus.value = 'CERRADA';
-      }
-      throw new Error(message);
-    }
-
-    venta.value = data.venta || data.Venta || data;
-    clearVentaId();
-    items.value = (venta.value.items || []).map((item) => ({
-      ...item,
-      subtotal: item.subtotal ?? item.cantidad * item.precioUnitario
-    }));
-    qtyEdits.value = {};
-    items.value.forEach((item) => {
-      qtyEdits.value[item.id] = item.cantidad;
-    });
-    pricing.value = null;
-    dialogAnular.value = false;
-    motivoAnular.value = '';
-    flash('error', 'Venta anulada');
-  } catch (err) {
-    flash('error', err?.message || 'Error al anular venta.');
-  } finally {
-    anularLoading.value = false;
   }
 };
 
@@ -937,19 +1005,25 @@ const onKeydown = (event) => {
 
   if (event.key === 'F2') {
     event.preventDefault();
+    if (presupuestoModo.value) {
+      togglePresupuestoMode();
+      return;
+    }
     createVenta();
   }
   if (event.key === 'F8') {
     event.preventDefault();
+    if (presupuestoModo.value) {
+      if (items.value.length) crearPresupuesto();
+      return;
+    }
     if (items.value.length && canEdit.value) {
       openPagos();
     }
   }
   if (event.key === 'Escape') {
     event.preventDefault();
-    if (ventaId.value) {
-      dialogAnular.value = true;
-    }
+    clearCarrito();
   }
 };
 
@@ -966,6 +1040,7 @@ const printTicket = (ventaData, pagosData) => {
   if (!ventaData) return;
   const win = window.open('', '_blank', 'width=380,height=600');
   if (!win) return;
+  const esFacturada = (ventaData.facturada ?? ventaData.Facturada) === true;
 
   const itemsRows = (ventaData.items || [])
     .map((item) => {
@@ -1003,6 +1078,7 @@ const printTicket = (ventaData, pagosData) => {
         <h1>Ticket de venta</h1>
         <div>Venta N°: ${ventaData.numero ?? ventaData.Numero ?? '-'}</div>
         <div>Fecha: ${formatDateTime(ventaData.createdAt)}</div>
+        <div>Facturacion: ${esFacturada ? 'FACTURADA' : 'NO FACTURADA'}</div>
         <table>
           <thead>
             <tr>
@@ -1032,13 +1108,107 @@ const printTicket = (ventaData, pagosData) => {
   setTimeout(() => win.close(), 300);
 };
 
-watch(dialogPagos, (open) => {
-  if (!open) {
-    focusScan();
+const togglePresupuestoMode = () => {
+  presupuestoModo.value = !presupuestoModo.value;
+  if (presupuestoModo.value) {
+    venta.value = null;
+    clearVentaId();
+    items.value = [];
+    qtyEdits.value = {};
+    pricing.value = null;
+    pagos.value = [];
+    dialogPagos.value = false;
+    flash('success', 'Modo presupuesto activo');
+  } else {
+    items.value = [];
+    qtyEdits.value = {};
+    pricing.value = null;
+    flash('success', 'Modo presupuesto desactivado');
   }
-});
+  focusScan();
+};
 
-watch(dialogAnular, (open) => {
+const crearPresupuesto = () => {
+  if (!items.value.length) {
+    flash('error', 'Agrega productos para generar el presupuesto.');
+    return;
+  }
+  const now = new Date();
+  const numero = `P-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  const data = {
+    numero,
+    createdAt: now.toISOString(),
+    totalNeto: totalNeto.value,
+    items: items.value.map((item) => ({
+      nombre: item.nombre,
+      cantidad: item.cantidad,
+      precioUnitario: item.precioUnitario,
+      subtotal: item.subtotal
+    }))
+  };
+  printPresupuesto(data);
+  items.value = [];
+  qtyEdits.value = {};
+  pricing.value = null;
+  productoSeleccionado.value = null;
+  productoSearch.value = '';
+  productosEncontrados.value = [];
+  flash('success', 'Presupuesto generado');
+  focusScan();
+};
+
+const printPresupuesto = (data) => {
+  const win = window.open('', '_blank', 'width=420,height=640');
+  if (!win) return;
+
+  const rows = (data.items || [])
+    .map((item) => `
+      <tr>
+        <td>${item.nombre}</td>
+        <td style="text-align:right">${item.cantidad}</td>
+        <td style="text-align:right">${formatMoney(item.precioUnitario)}</td>
+        <td style="text-align:right">${formatMoney(item.subtotal)}</td>
+      </tr>`)
+    .join('');
+
+  win.document.write(`
+    <html>
+      <head>
+        <title>Presupuesto</title>
+        <style>
+          body { font-family: Arial, sans-serif; font-size: 12px; padding: 10px; }
+          h1 { margin: 0 0 6px 0; font-size: 16px; letter-spacing: 1px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+          th, td { border-bottom: 1px dashed #ccc; padding: 4px 0; }
+          th { text-align: left; font-weight: 600; }
+        </style>
+      </head>
+      <body>
+        <h1>PRESUPUESTO</h1>
+        <div>Número: ${data.numero}</div>
+        <div>Fecha: ${formatDateTime(data.createdAt)}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th style="text-align:right">Cant</th>
+              <th style="text-align:right">Precio</th>
+              <th style="text-align:right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:8px"><strong>Total: ${formatMoney(data.totalNeto)}</strong></div>
+      </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  win.print();
+  setTimeout(() => win.close(), 300);
+};
+
+watch(dialogPagos, (open) => {
   if (!open) {
     focusScan();
   }
@@ -1081,3 +1251,4 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 </style>
+

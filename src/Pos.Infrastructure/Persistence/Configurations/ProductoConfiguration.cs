@@ -22,6 +22,8 @@ public sealed class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         builder.Property(x => x.Sku).HasMaxLength(80).IsRequired();
         builder.Property(x => x.PrecioBase).HasColumnType("numeric(18,4)").HasDefaultValue(1m).IsRequired();
         builder.Property(x => x.PrecioVenta).HasColumnType("numeric(18,4)").HasDefaultValue(1m).IsRequired();
+        builder.Property(x => x.PricingMode).HasConversion<int>().HasDefaultValue(Pos.Domain.Enums.ProductPricingMode.FijoPct).IsRequired();
+        builder.Property(x => x.MargenGananciaPct).HasColumnType("numeric(6,2)");
         builder.Property(x => x.IsActive).IsRequired();
 
         builder.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").IsRequired();

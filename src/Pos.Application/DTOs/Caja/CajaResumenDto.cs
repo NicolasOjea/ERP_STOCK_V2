@@ -7,4 +7,9 @@ public sealed record CajaResumenDto(
     decimal TotalIngresos,
     decimal TotalEgresos,
     decimal SaldoActual,
-    int TotalMovimientos);
+    int TotalMovimientos,
+    IReadOnlyCollection<CajaResumenMedioDto> Medios);
+
+public sealed record CajaResumenMedioDto(
+    string Medio,
+    decimal Teorico);

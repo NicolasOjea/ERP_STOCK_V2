@@ -13,4 +13,6 @@ public sealed record ProductListItemDto(
     string? Proveedor,
     decimal PrecioBase,
     decimal PrecioVenta,
+    string PricingMode,
+    decimal? MargenGananciaPct,
     bool IsActive);

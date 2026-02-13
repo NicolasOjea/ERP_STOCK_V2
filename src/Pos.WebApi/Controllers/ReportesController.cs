@@ -16,6 +16,18 @@ public sealed class ReportesController : ControllerBase
         _service = service;
     }
 
+    [HttpGet("resumen-ventas")]
+    [Authorize(Policy = "PERM_REPORTES_VER")]
+    [ProducesResponseType(typeof(ReportResumenVentasDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ReportResumenVentasDto>> ResumenVentas(
+        [FromQuery] DateTimeOffset? desde,
+        [FromQuery] DateTimeOffset? hasta,
+        CancellationToken cancellationToken)
+    {
+        var result = await _service.GetResumenVentasAsync(desde, hasta, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("ventas-por-dia")]
     [Authorize(Policy = "PERM_REPORTES_VER")]
     [ProducesResponseType(typeof(ReportChartDto), StatusCodes.Status200OK)]
@@ -69,10 +81,11 @@ public sealed class ReportesController : ControllerBase
     [Authorize(Policy = "PERM_REPORTES_VER")]
     [ProducesResponseType(typeof(ReportTableDto<StockInmovilizadoItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ReportTableDto<StockInmovilizadoItemDto>>> StockInmovilizado(
-        [FromQuery] int dias,
+        [FromQuery] DateTimeOffset? desde,
+        [FromQuery] DateTimeOffset? hasta,
         CancellationToken cancellationToken)
     {
-        var result = await _service.GetStockInmovilizadoAsync(dias, cancellationToken);
+        var result = await _service.GetStockInmovilizadoAsync(desde, hasta, cancellationToken);
         return Ok(result);
     }
 }

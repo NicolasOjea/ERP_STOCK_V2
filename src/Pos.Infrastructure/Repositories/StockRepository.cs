@@ -74,6 +74,7 @@ public sealed class StockRepository : IStockRepository
         Guid tenantId,
         Guid sucursalId,
         string? search,
+        Guid? proveedorId,
         CancellationToken cancellationToken = default)
     {
         var productsQuery = _dbContext.Productos.AsNoTracking()
@@ -87,17 +88,67 @@ public sealed class StockRepository : IStockRepository
                 || EF.Functions.ILike(p.Sku, $"%{term}%"));
         }
 
-        var products = await productsQuery
+        var productsBase = await productsQuery
             .OrderBy(p => p.Name)
-            .Select(p => new { p.Id, p.Name, p.Sku })
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Sku,
+                LegacyProveedorId = p.ProveedorId
+            })
             .ToListAsync(cancellationToken);
 
-        if (products.Count == 0)
+        if (productsBase.Count == 0)
         {
             return Array.Empty<StockSaldoDto>();
         }
 
-        var productIds = products.Select(p => p.Id).ToList();
+        var allProductIds = productsBase.Select(p => p.Id).ToList();
+
+        var proveedorRelations = await _dbContext.ProductoProveedores.AsNoTracking()
+            .Where(pp => pp.TenantId == tenantId && allProductIds.Contains(pp.ProductoId))
+            .OrderByDescending(pp => pp.EsPrincipal)
+            .Select(pp => new { pp.ProductoId, pp.ProveedorId, pp.EsPrincipal })
+            .ToListAsync(cancellationToken);
+
+        var proveedorByProduct = proveedorRelations
+            .GroupBy(pp => pp.ProductoId)
+            .ToDictionary(g => g.Key, g => (Guid?)g.First().ProveedorId);
+
+        var resolvedProducts = productsBase
+            .Select(p =>
+            {
+                proveedorByProduct.TryGetValue(p.Id, out var relProveedorId);
+                var finalProveedorId = relProveedorId ?? p.LegacyProveedorId;
+                return new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Sku,
+                    ProveedorId = finalProveedorId
+                };
+            })
+            .Where(p => !proveedorId.HasValue || p.ProveedorId == proveedorId.Value)
+            .ToList();
+
+        if (resolvedProducts.Count == 0)
+        {
+            return Array.Empty<StockSaldoDto>();
+        }
+
+        var providerIds = resolvedProducts
+            .Where(p => p.ProveedorId.HasValue)
+            .Select(p => p.ProveedorId!.Value)
+            .Distinct()
+            .ToList();
+
+        var providerNames = await _dbContext.Proveedores.AsNoTracking()
+            .Where(pr => pr.TenantId == tenantId && providerIds.Contains(pr.Id))
+            .Select(pr => new { pr.Id, pr.Name })
+            .ToDictionaryAsync(pr => pr.Id, pr => pr.Name, cancellationToken);
+
+        var productIds = resolvedProducts.Select(p => p.Id).ToList();
 
         var existingSaldos = await _dbContext.StockSaldos
             .Where(s => s.TenantId == tenantId && s.SucursalId == sucursalId && productIds.Contains(s.ProductoId))
@@ -108,7 +159,7 @@ public sealed class StockRepository : IStockRepository
         var now = DateTimeOffset.UtcNow;
         var added = false;
 
-        foreach (var product in products)
+        foreach (var product in resolvedProducts)
         {
             if (saldoByProduct.ContainsKey(product.Id))
             {
@@ -126,10 +177,20 @@ public sealed class StockRepository : IStockRepository
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        var result = products.Select(p =>
+        var result = resolvedProducts.Select(p =>
         {
             var saldo = saldoByProduct[p.Id];
-            return new StockSaldoDto(p.Id, p.Name, p.Sku, p.Sku, saldo.CantidadActual);
+            var proveedorNombre = p.ProveedorId.HasValue && providerNames.TryGetValue(p.ProveedorId.Value, out var name)
+                ? name
+                : null;
+            return new StockSaldoDto(
+                p.Id,
+                p.Name,
+                p.Sku,
+                p.Sku,
+                saldo.CantidadActual,
+                p.ProveedorId,
+                proveedorNombre);
         }).ToList();
 
         return result;
@@ -154,7 +215,7 @@ public sealed class StockRepository : IStockRepository
                     on new { c.ProductoId, c.TenantId, c.SucursalId }
                     equals new { s.ProductoId, s.TenantId, s.SucursalId } into saldoJoin
                 from saldo in saldoJoin.DefaultIfEmpty()
-                where c.TenantId == tenantId && c.SucursalId == sucursalId
+                where c.TenantId == tenantId && c.SucursalId == sucursalId && p.IsActive
                 select new
                 {
                     p.Id,
@@ -230,7 +291,7 @@ public sealed class StockRepository : IStockRepository
                     on new { c.ProductoId, c.TenantId, c.SucursalId }
                     equals new { s.ProductoId, s.TenantId, s.SucursalId } into saldoJoin
                 from saldo in saldoJoin.DefaultIfEmpty()
-                where c.TenantId == tenantId && c.SucursalId == sucursalId
+                where c.TenantId == tenantId && c.SucursalId == sucursalId && p.IsActive
                 select new
                 {
                     p.Id,

@@ -5,4 +5,6 @@ public sealed record StockSaldoDto(
     string Nombre,
     string Sku,
     string Codigo,
-    decimal CantidadActual);
+    decimal CantidadActual,
+    Guid? ProveedorId,
+    string? Proveedor);

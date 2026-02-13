@@ -10,6 +10,7 @@ import CajaPage from '../pages/CajaPage.vue';
 import RemitosPage from '../pages/RemitosPage.vue';
 import PreRecepcionPage from '../pages/PreRecepcionPage.vue';
 import RecepcionPage from '../pages/RecepcionPage.vue';
+import EmpresaDatosPage from '../pages/EmpresaDatosPage.vue';
 
 const routes = [
   {
@@ -74,6 +75,12 @@ const routes = [
         name: 'caja',
         component: CajaPage,
         meta: { permission: 'PERM_CAJA_MOVIMIENTO' }
+      },
+      {
+        path: 'empresa',
+        name: 'empresa',
+        component: EmpresaDatosPage,
+        meta: { permission: 'PERM_PRODUCTO_VER' }
       }
     ]
   },

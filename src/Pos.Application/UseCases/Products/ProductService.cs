@@ -136,6 +136,16 @@ public sealed class ProductService
                 });
         }
 
+        if (request.MargenGananciaPct.HasValue && request.MargenGananciaPct.Value < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["margenGananciaPct"] = new[] { "El margen no puede ser negativo." }
+                });
+        }
+
         var tenantId = EnsureTenant();
         var now = DateTimeOffset.UtcNow;
 
@@ -193,7 +203,9 @@ public sealed class ProductService
             || request.ProveedorId is not null
             || request.IsActive is not null
             || request.PrecioBase is not null
-            || request.PrecioVenta is not null;
+            || request.PrecioVenta is not null
+            || request.PricingMode is not null
+            || request.MargenGananciaPct is not null;
 
         if (!hasAnyChange)
         {
@@ -272,6 +284,16 @@ public sealed class ProductService
                 new Dictionary<string, string[]>
                 {
                     ["precioVenta"] = new[] { "El precio de venta no puede ser negativo." }
+                });
+        }
+
+        if (request.MargenGananciaPct.HasValue && request.MargenGananciaPct.Value < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["margenGananciaPct"] = new[] { "El margen no puede ser negativo." }
                 });
         }
 

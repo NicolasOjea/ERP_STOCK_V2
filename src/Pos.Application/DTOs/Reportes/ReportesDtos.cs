@@ -8,6 +8,12 @@ public sealed record ReportChartDto(
 
 public sealed record ReportTableDto<T>(IReadOnlyList<T> Rows);
 
+public sealed record ReportResumenVentasDto(
+    decimal TotalIngresos,
+    decimal TotalEgresos,
+    decimal TotalFacturado,
+    decimal TotalNoFacturado);
+
 public sealed record VentaPorDiaItemDto(
     DateTime Fecha,
     decimal Total);

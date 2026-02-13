@@ -100,6 +100,10 @@ namespace Pos.Infrastructure.MigrationsNew
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("Numero")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<Guid>("SucursalId")
                         .HasColumnType("uuid");
 
@@ -114,6 +118,10 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.HasIndex("SucursalId");
 
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "SucursalId", "Numero")
+                        .IsUnique()
+                        .HasFilter("\"Numero\" IS NOT NULL");
 
                     b.ToTable("cajas", (string)null);
                 });
@@ -253,6 +261,11 @@ namespace Pos.Infrastructure.MigrationsNew
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<decimal>("MargenGananciaPct")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(6,2)")
+                        .HasDefaultValue(30m);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -530,6 +543,61 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.HasIndex("TenantId");
 
                     b.ToTable("documento_compra_items", (string)null);
+                });
+
+            modelBuilder.Entity("Pos.Domain.Entities.EmpresaDatos", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Cuit")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RazonSocial")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Web")
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique();
+
+                    b.ToTable("empresa_datos", (string)null);
                 });
 
             modelBuilder.Entity("Pos.Domain.Entities.ListaPrecio", b =>
@@ -1075,6 +1143,9 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<Guid?>("MarcaId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("MargenGananciaPct")
+                        .HasColumnType("numeric(6,2)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(250)
@@ -1084,6 +1155,16 @@ namespace Pos.Infrastructure.MigrationsNew
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(18,4)")
                         .HasDefaultValue(1m);
+
+                    b.Property<decimal>("PrecioVenta")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,4)")
+                        .HasDefaultValue(1m);
+
+                    b.Property<int>("PricingMode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<Guid?>("ProveedorId")
                         .HasColumnType("uuid");
@@ -1213,14 +1294,14 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<Guid>("ProductoId")
                         .HasColumnType("uuid");
 
-                    b.Property<decimal>("StockMinimo")
-                        .HasColumnType("numeric(18,4)");
-
                     b.Property<decimal>("StockDeseado")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("stockdeseado")
                         .HasColumnType("numeric(18,4)")
-                        .HasDefaultValue(0m);
+                        .HasDefaultValue(0m)
+                        .HasColumnName("stockdeseado");
+
+                    b.Property<decimal>("StockMinimo")
+                        .HasColumnType("numeric(18,4)");
 
                     b.Property<Guid>("SucursalId")
                         .HasColumnType("uuid");
@@ -1259,8 +1340,16 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Cuit")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -1269,6 +1358,11 @@ namespace Pos.Infrastructure.MigrationsNew
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Telefono")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
@@ -1734,19 +1828,16 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                b.Property<DateTimeOffset>("Fecha")
-                    .HasColumnType("timestamp with time zone");
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
 
-                b.Property<string>("Motivo")
-                    .IsRequired()
-                    .HasMaxLength(500)
-                    .HasColumnType("character varying(500)");
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                b.Property<long?>("VentaNumero")
-                    .HasColumnType("bigint");
-
-                b.Property<Guid>("SucursalId")
-                    .HasColumnType("uuid");
+                    b.Property<Guid>("SucursalId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
@@ -1757,17 +1848,20 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<long?>("VentaNumero")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
-                b.HasIndex("Fecha");
+                    b.HasIndex("Fecha");
 
-                b.HasIndex("SucursalId");
+                    b.HasIndex("SucursalId");
 
-                b.HasIndex("TenantId");
+                    b.HasIndex("TenantId");
 
-                b.HasIndex("TenantId", "VentaNumero");
+                    b.HasIndex("TenantId", "VentaNumero");
 
-                b.ToTable("stock_movimientos", (string)null);
+                    b.ToTable("stock_movimientos", (string)null);
                 });
 
             modelBuilder.Entity("Pos.Domain.Entities.StockMovimientoItem", b =>
@@ -2057,18 +2151,19 @@ namespace Pos.Infrastructure.MigrationsNew
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                b.Property<int>("Estado")
-                    .HasColumnType("integer");
+                    b.Property<int>("Estado")
+                        .HasColumnType("integer");
 
-                b.Property<long>("Numero")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("bigint")
-                    .HasDefaultValueSql("nextval('venta_numero_seq')");
+                    b.Property<string>("ListaPrecio")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
-                b.Property<string>("ListaPrecio")
-                    .IsRequired()
-                    .HasMaxLength(120)
-                    .HasColumnType("character varying(120)");
+                    b.Property<long>("Numero")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("numero")
+                        .HasDefaultValueSql("nextval('venta_numero_seq')");
 
                     b.Property<Guid>("SucursalId")
                         .HasColumnType("uuid");
@@ -2098,14 +2193,14 @@ namespace Pos.Infrastructure.MigrationsNew
 
                     b.HasIndex("Estado");
 
-                b.HasIndex("SucursalId");
+                    b.HasIndex("SucursalId");
 
-                b.HasIndex("TenantId");
+                    b.HasIndex("TenantId");
 
-                b.HasIndex("TenantId", "Numero")
-                    .IsUnique();
+                    b.HasIndex("UserId");
 
-                b.HasIndex("UserId");
+                    b.HasIndex("TenantId", "Numero")
+                        .IsUnique();
 
                     b.ToTable("ventas", (string)null);
                 });
@@ -2369,6 +2464,15 @@ namespace Pos.Infrastructure.MigrationsNew
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Pos.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Pos.Domain.Entities.EmpresaDatos", b =>
+                {
                     b.HasOne("Pos.Domain.Entities.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")

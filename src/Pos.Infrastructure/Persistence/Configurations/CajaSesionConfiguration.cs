@@ -17,6 +17,7 @@ public sealed class CajaSesionConfiguration : IEntityTypeConfiguration<CajaSesio
         builder.Property(x => x.TenantId).HasColumnType("uuid");
         builder.Property(x => x.CajaId).HasColumnType("uuid");
         builder.Property(x => x.SucursalId).HasColumnType("uuid");
+        builder.Property(x => x.Turno).HasColumnName("turno").HasMaxLength(16).IsRequired();
 
         builder.Property(x => x.MontoInicial).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.MontoCierre).HasColumnType("numeric(18,4)");

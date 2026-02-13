@@ -222,6 +222,88 @@ public sealed class ProveedorService
             cancellationToken);
     }
 
+    public async Task<ProveedorDeletePreviewDto> GetDeletePreviewAsync(
+        Guid proveedorId,
+        CancellationToken cancellationToken)
+    {
+        if (proveedorId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var proveedor = await _proveedorRepository.GetByIdAsync(tenantId, proveedorId, cancellationToken);
+        if (proveedor is null)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        var products = await _proveedorRepository.GetDeleteProductOptionsAsync(tenantId, proveedorId, cancellationToken);
+        return new ProveedorDeletePreviewDto(proveedorId, proveedor.Name, products);
+    }
+
+    public async Task DeleteWithProductResolutionAsync(
+        Guid proveedorId,
+        ProveedorDeleteRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (proveedorId == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es obligatorio." }
+                });
+        }
+
+        if (request is null)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["request"] = new[] { "El request es obligatorio." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var before = await _proveedorRepository.GetByIdAsync(tenantId, proveedorId, cancellationToken);
+        if (before is null)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        var deleted = await _proveedorRepository.DeleteWithProductResolutionAsync(
+            tenantId,
+            proveedorId,
+            request.ProductIdsToDelete ?? Array.Empty<Guid>(),
+            DateTimeOffset.UtcNow,
+            cancellationToken);
+
+        if (!deleted)
+        {
+            throw new NotFoundException("Proveedor no encontrado.");
+        }
+
+        await _auditLogService.LogAsync(
+            "Proveedor",
+            proveedorId.ToString(),
+            AuditAction.Delete,
+            JsonSerializer.Serialize(before),
+            null,
+            JsonSerializer.Serialize(new
+            {
+                deletedProductIds = request.ProductIdsToDelete
+            }),
+            cancellationToken);
+    }
+
     private Guid EnsureTenant()
     {
         if (_requestContext.TenantId == Guid.Empty)

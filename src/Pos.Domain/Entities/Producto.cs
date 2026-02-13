@@ -1,4 +1,5 @@
 using Pos.Domain.Common;
+using Pos.Domain.Enums;
 
 namespace Pos.Domain.Entities;
 
@@ -19,6 +20,8 @@ public sealed class Producto : EntityBase
         DateTimeOffset createdAtUtc,
         decimal precioBase = 1m,
         decimal precioVenta = 1m,
+        ProductPricingMode pricingMode = ProductPricingMode.FijoPct,
+        decimal? margenGananciaPct = null,
         bool isActive = true)
         : base(id, tenantId, createdAtUtc)
     {
@@ -34,7 +37,38 @@ public sealed class Producto : EntityBase
         ProveedorId = proveedorId;
         PrecioBase = precioBase;
         PrecioVenta = precioVenta;
+        PricingMode = pricingMode;
+        MargenGananciaPct = margenGananciaPct;
         IsActive = isActive;
+    }
+
+    public Producto(
+        Guid id,
+        Guid tenantId,
+        string name,
+        string sku,
+        Guid? categoriaId,
+        Guid? marcaId,
+        Guid? proveedorId,
+        DateTimeOffset createdAtUtc,
+        decimal precioBase,
+        decimal precioVenta,
+        bool isActive)
+        : this(
+            id,
+            tenantId,
+            name,
+            sku,
+            categoriaId,
+            marcaId,
+            proveedorId,
+            createdAtUtc,
+            precioBase,
+            precioVenta,
+            ProductPricingMode.FijoPct,
+            null,
+            isActive)
+    {
     }
 
     public string Name { get; private set; } = string.Empty;
@@ -44,6 +78,8 @@ public sealed class Producto : EntityBase
     public Guid? ProveedorId { get; private set; }
     public decimal PrecioBase { get; private set; }
     public decimal PrecioVenta { get; private set; }
+    public ProductPricingMode PricingMode { get; private set; }
+    public decimal? MargenGananciaPct { get; private set; }
     public bool IsActive { get; private set; }
 
     public void Update(
@@ -54,6 +90,8 @@ public sealed class Producto : EntityBase
         Guid? proveedorId,
         decimal precioBase,
         decimal precioVenta,
+        ProductPricingMode pricingMode,
+        decimal? margenGananciaPct,
         bool isActive,
         DateTimeOffset updatedAtUtc)
     {
@@ -69,6 +107,8 @@ public sealed class Producto : EntityBase
         ProveedorId = proveedorId;
         PrecioBase = precioBase;
         PrecioVenta = precioVenta;
+        PricingMode = pricingMode;
+        MargenGananciaPct = margenGananciaPct;
         IsActive = isActive;
         MarkUpdated(updatedAtUtc);
     }

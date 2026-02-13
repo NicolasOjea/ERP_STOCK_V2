@@ -59,4 +59,27 @@ public sealed class ProveedoresController : ControllerBase
         await _proveedorService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
+
+    [HttpGet("{id:guid}/delete-preview")]
+    [Authorize(Policy = "PERM_PROVEEDOR_GESTIONAR")]
+    [ProducesResponseType(typeof(ProveedorDeletePreviewDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ProveedorDeletePreviewDto>> GetDeletePreview(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var preview = await _proveedorService.GetDeletePreviewAsync(id, cancellationToken);
+        return Ok(preview);
+    }
+
+    [HttpPost("{id:guid}/delete")]
+    [Authorize(Policy = "PERM_PROVEEDOR_GESTIONAR")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteWithProductResolution(
+        Guid id,
+        [FromBody] ProveedorDeleteRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        await _proveedorService.DeleteWithProductResolutionAsync(id, request, cancellationToken);
+        return NoContent();
+    }
 }

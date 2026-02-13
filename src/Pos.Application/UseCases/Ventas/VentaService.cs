@@ -317,6 +317,30 @@ public sealed class VentaService
         return venta;
     }
 
+    public async Task<VentaTicketDto> GetTicketByNumeroAsync(long numeroVenta, CancellationToken cancellationToken)
+    {
+        if (numeroVenta <= 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["numeroVenta"] = new[] { "El numero de venta es invalido." }
+                });
+        }
+
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+
+        var ticket = await _ventaRepository.GetTicketByNumeroAsync(tenantId, sucursalId, numeroVenta, cancellationToken);
+        if (ticket is null)
+        {
+            throw new NotFoundException("Venta no encontrada.");
+        }
+
+        return ticket;
+    }
+
     public async Task<VentaConfirmResultDto> ConfirmarVentaAsync(
         Guid ventaId,
         VentaConfirmRequestDto request,
@@ -349,6 +373,16 @@ public sealed class VentaService
                 new Dictionary<string, string[]>
                 {
                     ["cajaSesionId"] = new[] { "La sesion de caja es invalida." }
+                });
+        }
+
+        if (!request.Facturada.HasValue)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["facturada"] = new[] { "Debes indicar si la venta es facturada o no facturada." }
                 });
         }
 

@@ -129,6 +129,28 @@ public sealed class CajaService
                 });
         }
 
+        if (string.IsNullOrWhiteSpace(request.Turno))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["turno"] = new[] { "El turno es obligatorio." }
+                });
+        }
+
+        var turno = request.Turno.Trim().ToUpperInvariant();
+        var turnosValidos = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "MANANA", "TARDE", "NOCHE" };
+        if (!turnosValidos.Contains(turno))
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["turno"] = new[] { "Turno invalido. Usa MANANA, TARDE o NOCHE." }
+                });
+        }
+
         var tenantId = EnsureTenant();
         var sucursalId = EnsureSucursal();
 
@@ -149,6 +171,7 @@ public sealed class CajaService
             sucursalId,
             request.CajaId,
             request.MontoInicial,
+            turno,
             DateTimeOffset.UtcNow,
             cancellationToken);
 
@@ -402,6 +425,36 @@ public sealed class CajaService
         }
 
         return resumen;
+    }
+
+    public async Task<IReadOnlyList<CajaHistorialDto>> GetHistorialAsync(
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken)
+    {
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+
+        // El filtro de fecha en UI es fecha local (Argentina). Convertimos ese rango local a UTC.
+        var appOffset = TimeSpan.FromHours(-3);
+        DateTimeOffset? fromUtc = from.HasValue
+            ? new DateTimeOffset(from.Value.ToDateTime(TimeOnly.MinValue), appOffset).ToUniversalTime()
+            : null;
+        DateTimeOffset? toUtc = to.HasValue
+            ? new DateTimeOffset(to.Value.ToDateTime(TimeOnly.MaxValue), appOffset).ToUniversalTime()
+            : null;
+
+        if (fromUtc.HasValue && toUtc.HasValue && fromUtc > toUtc)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["fecha"] = new[] { "Rango de fechas invalido." }
+                });
+        }
+
+        return await _cajaRepository.GetSesionesHistoricasAsync(tenantId, sucursalId, fromUtc, toUtc, cancellationToken);
     }
 
     private Guid EnsureTenant()

@@ -19,6 +19,12 @@ public interface IVentaRepository
         Guid ventaId,
         CancellationToken cancellationToken = default);
 
+    Task<VentaTicketDto?> GetTicketByNumeroAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        long numeroVenta,
+        CancellationToken cancellationToken = default);
+
     Task<VentaItemChangeDto> AddItemByCodeAsync(
         Guid tenantId,
         Guid sucursalId,

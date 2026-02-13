@@ -3,64 +3,129 @@
     <v-card class="pos-card pa-4">
       <div class="d-flex align-center gap-3">
         <div>
-          <div class="text-h6">Cargar remito</div>
-          <div class="text-caption text-medium-emphasis">Pegue JSON o suba archivo</div>
+          <div class="text-h6">Ingreso manual de remito</div>
+          <div class="text-caption text-medium-emphasis">
+            El proveedor es opcional y funciona como filtro
+          </div>
         </div>
       </div>
 
-      <v-alert
-        v-if="error"
-        type="error"
-        variant="tonal"
-        class="mt-3"
-        density="compact"
-      >
+      <v-alert v-if="error" type="error" variant="tonal" class="mt-3" density="compact">
         {{ error }}
       </v-alert>
 
-      <v-textarea
-        v-model="jsonInput"
-        label="JSON remito"
-        variant="outlined"
-        density="comfortable"
-        rows="10"
-        class="mt-4"
-      />
+      <v-row dense class="mt-2">
+        <v-col cols="12" md="6">
+          <v-autocomplete
+            v-model="selectedProveedorId"
+            :items="proveedores"
+            item-title="name"
+            item-value="id"
+            label="Proveedor"
+            variant="outlined"
+            density="comfortable"
+            clearable
+            :loading="loadingProveedores"
+            @update:model-value="onProveedorChanged"
+          />
+        </v-col>
+      </v-row>
 
-      <v-file-input
-        v-model="fileInput"
-        label="Archivo (json)"
-        variant="outlined"
-        density="comfortable"
-        class="mt-3"
-        prepend-icon="mdi-paperclip"
-        @update:model-value="handleFile"
-      />
+      <v-divider class="my-2" />
 
-      <div class="d-flex align-center gap-3 mt-3">
-        <v-btn
-          color="primary"
-          size="large"
-          class="text-none"
-          :loading="parseLoading"
-          @click="parsear"
-        >
-          Parsear
-        </v-btn>
-        <v-btn
-          variant="tonal"
-          color="secondary"
-          class="text-none"
-          @click="setSample"
-        >
-          Usar sample
-        </v-btn>
-      </div>
+      <v-row dense>
+        <v-col cols="12" md="4">
+          <v-text-field
+            v-model="scanSku"
+            label="Escanear SKU"
+            variant="outlined"
+            density="comfortable"
+            clearable
+            @keyup.enter="scanAndSelect"
+          />
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-autocomplete
+            v-model="selectedProductoId"
+            v-model:search="productSearch"
+            :items="productoOptions"
+            item-title="label"
+            item-value="id"
+            label="Producto (nombre o SKU)"
+            variant="outlined"
+            density="comfortable"
+            clearable
+            :loading="loadingProductos"
+            :no-data-text="'Sin resultados'"
+            @update:search="onProductSearch"
+          />
+        </v-col>
+        <v-col cols="12" md="2">
+          <v-text-field
+            v-model="addCantidad"
+            label="Cantidad"
+            type="number"
+            min="0.01"
+            step="0.01"
+            variant="outlined"
+            density="comfortable"
+          />
+        </v-col>
+        <v-col cols="12" md="2" class="d-flex align-center">
+          <v-btn
+            color="primary"
+            class="text-none w-100"
+            :disabled="!selectedProductoId || addingItem"
+            :loading="addingItem"
+            @click="addItem"
+          >
+            Agregar
+          </v-btn>
+        </v-col>
+      </v-row>
 
-      <v-divider class="my-4" />
+      <v-divider class="my-3" />
 
-      <div v-if="parseResult" class="text-caption text-medium-emphasis">
-        Documento: {{ shortId(parseResult.documentoCompraId) }} - Items: {{ parseResult.items?.length || 0 }}
+      <v-data-table
+        :headers="headers"
+        :items="items"
+        item-key="productoId"
+        density="compact"
+        height="360"
+      >
+        <template #item.cantidad="{ item }">
+          <v-text-field
+            :model-value="item.cantidad"
+            type="number"
+            min="0.01"
+            step="0.01"
+            variant="outlined"
+            density="compact"
+            hide-details
+            @update:model-value="(v) => updateCantidad(item.productoId, v)"
+          />
+        </template>
+        <template #item.actions="{ item }">
+          <v-btn icon="mdi-delete-outline" size="small" variant="text" color="error" @click="removeItem(item.productoId)" />
+        </template>
+      </v-data-table>
+
+      <div class="d-flex justify-space-between align-center mt-4">
+        <div class="text-caption text-medium-emphasis">
+          Productos: {{ items.length }}
+        </div>
+        <div class="d-flex gap-2">
+          <v-btn variant="text" class="text-none" :disabled="saving" @click="clearForm">Limpiar</v-btn>
+          <v-btn
+            color="primary"
+            class="text-none"
+            :loading="saving"
+            :disabled="!canSave"
+            @click="confirmarIngreso"
+          >
+            Confirmar ingreso
+          </v-btn>
+        </div>
       </div>
     </v-card>
 
@@ -70,21 +135,83 @@
         <span>{{ snackbar.text }}</span>
       </div>
     </v-snackbar>
+
+    <v-dialog v-model="createDialog" width="560">
+      <v-card>
+        <v-card-title>Crear producto</v-card-title>
+        <v-card-text>
+          <div class="text-caption text-medium-emphasis mb-3">
+            SKU no encontrado. Puedes crearlo ahora y seguir con el ingreso.
+          </div>
+          <v-text-field
+            v-model="createForm.sku"
+            label="SKU"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="createForm.name"
+            label="Nombre"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-autocomplete
+            v-model="createForm.proveedorId"
+            :items="proveedores"
+            item-title="name"
+            item-value="id"
+            label="Proveedor"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="createForm.precioBase"
+            label="Precio base"
+            variant="outlined"
+            density="comfortable"
+            type="number"
+            min="0"
+            step="0.01"
+          />
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" @click="createDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" class="text-none" :loading="creatingProduct" @click="createProductFromIngreso">
+            Crear producto
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { postJson } from '../services/apiClient';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, ref } from 'vue';
+import { getJson, postJson } from '../services/apiClient';
 
-const router = useRouter();
+const loadingProveedores = ref(false);
+const loadingProductos = ref(false);
+const addingItem = ref(false);
+const saving = ref(false);
 
-const jsonInput = ref('');
-const fileInput = ref(null);
-const parseLoading = ref(false);
-const parseResult = ref(null);
 const error = ref('');
+const proveedores = ref([]);
+const productos = ref([]);
+
+const selectedProveedorId = ref(null);
+const selectedProductoId = ref(null);
+const productSearch = ref('');
+const scanSku = ref('');
+const addCantidad = ref('1');
+const items = ref([]);
+const createDialog = ref(false);
+const creatingProduct = ref(false);
+const createForm = ref({
+  sku: '',
+  name: '',
+  proveedorId: null,
+  precioBase: '0'
+});
 
 const snackbar = ref({
   show: false,
@@ -93,10 +220,24 @@ const snackbar = ref({
   icon: 'mdi-check-circle'
 });
 
-const shortId = (value) => {
-  if (!value) return 'n/a';
-  return value.length > 8 ? value.slice(0, 8) : value;
-};
+const headers = [
+  { title: 'Producto', value: 'name' },
+  { title: 'SKU', value: 'sku' },
+  { title: 'Cantidad', value: 'cantidad', width: 180 },
+  { title: '', value: 'actions', sortable: false, align: 'end', width: 80 }
+];
+
+const productoOptions = computed(() =>
+  productos.value
+    .slice()
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'))
+    .map((p) => ({
+      ...p,
+      label: `${p.name} (${p.sku})`
+    }))
+);
+
+const canSave = computed(() => items.value.length > 0);
 
 const flash = (type, text) => {
   snackbar.value = {
@@ -118,75 +259,258 @@ const extractProblemMessage = (data) => {
   return data.detail || data.title || 'Error inesperado.';
 };
 
-const handleFile = async (files) => {
-  error.value = '';
-  const file = Array.isArray(files) ? files[0] : files;
-  if (!file) return;
+const loadProveedores = async () => {
+  loadingProveedores.value = true;
   try {
-    const text = await file.text();
-    jsonInput.value = text;
-  } catch {
-    error.value = 'No se pudo leer el archivo.';
-  }
-};
-
-const setSample = () => {
-  jsonInput.value = JSON.stringify(
-    {
-      proveedorId: null,
-      numero: 'REM-0001',
-      fecha: new Date().toISOString().slice(0, 10),
-      items: [
-        { sku: '779123456001', descripcion: 'Yerba 1kg', cantidad: 2, costoUnitario: 1200 },
-        { sku: '779123456999', descripcion: 'Producto desconocido', cantidad: 1 }
-      ]
-    },
-    null,
-    2
-  );
-};
-
-const parsear = async () => {
-  if (parseLoading.value) return;
-  error.value = '';
-  if (!jsonInput.value.trim()) {
-    error.value = 'Debe pegar un JSON valido.';
-    return;
-  }
-
-  let payload;
-  try {
-    payload = JSON.parse(jsonInput.value);
+    const { response, data } = await getJson('/api/v1/proveedores?activo=true');
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+    proveedores.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
   } catch (err) {
-    error.value = 'JSON invalido.';
-    return;
+    error.value = err?.message || 'No se pudieron cargar proveedores.';
+  } finally {
+    loadingProveedores.value = false;
   }
+};
 
-  parseLoading.value = true;
+const loadProductos = async (search = '') => {
+  loadingProductos.value = true;
   try {
-    const { response, data } = await postJson('/api/v1/documentos-compra/parse', payload);
+    const params = new URLSearchParams();
+    params.set('activo', 'true');
+    if (search.trim()) {
+      params.set('search', search.trim());
+    }
+
+    const { response, data } = await getJson(`/api/v1/productos?${params.toString()}`);
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
 
-    parseResult.value = data;
-
-    const preResp = await postJson('/api/v1/pre-recepciones', {
-      documentoCompraId: data.documentoCompraId
-    });
-
-    if (!preResp.response.ok) {
-      throw new Error(extractProblemMessage(preResp.data));
-    }
-
-    flash('success', 'Remito parseado');
-    router.push(`/remitos/pre-recepcion/${preResp.data.id}`);
+    const allProducts = (data || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
+    productos.value = selectedProveedorId.value
+      ? allProducts.filter((p) => p.proveedorId === selectedProveedorId.value)
+      : allProducts;
   } catch (err) {
-    flash('error', err?.message || 'No se pudo parsear el remito.');
+    error.value = err?.message || 'No se pudieron cargar productos.';
   } finally {
-    parseLoading.value = false;
+    loadingProductos.value = false;
   }
 };
+
+const onProveedorChanged = async () => {
+  selectedProductoId.value = null;
+  await loadProductos('');
+};
+
+const onProductSearch = async (value) => {
+  await loadProductos(value || '');
+};
+
+const addItem = async () => {
+  if (!selectedProductoId.value) return;
+
+  const qty = Number(addCantidad.value);
+  if (Number.isNaN(qty) || qty <= 0) {
+    flash('error', 'Cantidad invalida.');
+    return;
+  }
+
+  addingItem.value = true;
+  try {
+    const producto = productos.value.find((p) => p.id === selectedProductoId.value);
+    if (!producto) {
+      flash('error', 'Producto no encontrado.');
+      return;
+    }
+
+    const existing = items.value.find((i) => i.productoId === producto.id);
+    if (existing) {
+      existing.cantidad = Number(existing.cantidad) + qty;
+    } else {
+      items.value.push({
+        productoId: producto.id,
+        name: producto.name,
+        sku: producto.sku,
+        cantidad: qty
+      });
+    }
+
+    selectedProductoId.value = null;
+    addCantidad.value = '1';
+  } finally {
+    addingItem.value = false;
+  }
+};
+
+const removeItem = (productId) => {
+  items.value = items.value.filter((i) => i.productoId !== productId);
+};
+
+const updateCantidad = (productId, value) => {
+  const qty = Number(value);
+  const item = items.value.find((i) => i.productoId === productId);
+  if (!item) return;
+
+  if (Number.isNaN(qty) || qty <= 0) {
+    item.cantidad = 0;
+    return;
+  }
+  item.cantidad = qty;
+};
+
+const clearForm = () => {
+  selectedProveedorId.value = null;
+  selectedProductoId.value = null;
+  productSearch.value = '';
+  addCantidad.value = '1';
+  items.value = [];
+  error.value = '';
+  loadProductos('');
+};
+
+const resetCreateForm = () => {
+  createForm.value = {
+    sku: '',
+    name: '',
+    proveedorId: selectedProveedorId.value || null,
+    precioBase: '0'
+  };
+};
+
+const scanAndSelect = async () => {
+  const sku = (scanSku.value || '').trim();
+  if (!sku) return;
+
+  const params = new URLSearchParams();
+  params.set('activo', 'true');
+  params.set('search', sku);
+  const { response, data } = await getJson(`/api/v1/productos?${params.toString()}`);
+  if (!response.ok) {
+    flash('error', extractProblemMessage(data));
+    return;
+  }
+
+  const all = data || [];
+  const exact = all.find((p) => (p.sku || '').trim().toLowerCase() === sku.toLowerCase());
+  if (exact) {
+    await loadProductos(sku);
+    selectedProductoId.value = exact.id;
+    scanSku.value = '';
+    flash('success', `Producto encontrado: ${exact.name}`);
+    return;
+  }
+
+  resetCreateForm();
+  createForm.value.sku = sku;
+  createForm.value.name = sku;
+  createDialog.value = true;
+};
+
+const createProductFromIngreso = async () => {
+  if (creatingProduct.value) return;
+
+  const sku = (createForm.value.sku || '').trim();
+  const name = (createForm.value.name || '').trim();
+  const proveedorId = createForm.value.proveedorId;
+  const precioBase = Number(createForm.value.precioBase || 0);
+
+  if (!sku) {
+    flash('error', 'SKU obligatorio.');
+    return;
+  }
+  if (!name) {
+    flash('error', 'Nombre obligatorio.');
+    return;
+  }
+  if (!proveedorId) {
+    flash('error', 'Proveedor obligatorio para crear producto.');
+    return;
+  }
+
+  creatingProduct.value = true;
+  try {
+    const payload = {
+      name,
+      sku,
+      proveedorId,
+      isActive: true,
+      precioBase: Number.isNaN(precioBase) ? 0 : precioBase,
+      precioVenta: Number.isNaN(precioBase) ? 0 : precioBase
+    };
+
+    const { response, data } = await postJson('/api/v1/productos', payload);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+
+    await loadProductos(sku);
+    const created = productos.value.find((p) => p.id === data.id) || productos.value.find((p) => p.sku === sku);
+    if (created) {
+      selectedProductoId.value = created.id;
+    }
+
+    createDialog.value = false;
+    scanSku.value = '';
+    flash('success', 'Producto creado. Ya puedes agregarlo al ingreso.');
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo crear el producto.');
+  } finally {
+    creatingProduct.value = false;
+  }
+};
+
+const confirmarIngreso = async () => {
+  if (saving.value || !canSave.value) return;
+
+  const invalid = items.value.some((i) => Number(i.cantidad) <= 0);
+  if (invalid) {
+    flash('error', 'Todas las cantidades deben ser mayores a 0.');
+    return;
+  }
+
+  const proveedor = proveedores.value.find((p) => p.id === selectedProveedorId.value);
+  const motivo = proveedor
+    ? `Ingreso manual remito - filtro proveedor ${proveedor.name}`
+    : 'Ingreso manual remito - varios proveedores';
+
+  saving.value = true;
+  try {
+    const payload = {
+      tipo: 'AJUSTE',
+      motivo,
+      items: items.value.map((i) => ({
+        productoId: i.productoId,
+        cantidad: Number(i.cantidad),
+        esIngreso: true
+      }))
+    };
+
+    const { response, data } = await postJson('/api/v1/stock/ajustes', payload);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+
+    flash('success', 'Ingreso de productos registrado.');
+    clearForm();
+    await loadProveedores();
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo registrar el ingreso.');
+  } finally {
+    saving.value = false;
+  }
+};
+
+onMounted(async () => {
+  await loadProveedores();
+  await loadProductos('');
+  resetCreateForm();
+});
 </script>
 
 <style scoped>

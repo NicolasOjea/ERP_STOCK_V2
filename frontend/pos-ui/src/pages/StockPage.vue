@@ -9,7 +9,7 @@
       </div>
     </v-card>
 
-    <v-tabs v-model="tab" color="primary" class="mb-3 sticky-tabs">
+    <v-tabs v-model="tab" color="primary" class="mb-3">
       <v-tab value="saldos">Saldos</v-tab>
       <v-tab value="movimientos">Movimientos</v-tab>
       <v-tab value="alertas">Alertas</v-tab>
@@ -18,25 +18,51 @@
     <v-window v-model="tab">
       <v-window-item value="saldos">
         <v-card class="pos-card pa-4">
-          <div class="d-flex align-center gap-3">
-            <v-text-field
-              v-model="saldoSearch"
-              label="Buscar producto"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              style="max-width: 280px"
-            />
-            <v-btn
-              color="primary"
-              variant="tonal"
-              class="text-none"
-              :loading="saldosLoading"
-              @click="loadSaldos"
-            >
-              Buscar
-            </v-btn>
-          </div>
+          <v-row dense class="align-center">
+            <v-col cols="12" md="3">
+              <v-autocomplete
+                v-model="saldoProducto"
+                :items="saldoProductosLookup"
+                :loading="saldoProductosLoading"
+                item-title="label"
+                return-object
+                clearable
+                label="Producto"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                @update:search="searchSaldoProductos"
+                @update:model-value="onSaldoProductoChanged"
+              />
+            </v-col>
+            <v-col cols="12" md="5">
+              <v-autocomplete
+                v-model="saldoProveedor"
+                :items="proveedoresLookup"
+                item-title="label"
+                return-object
+                clearable
+                label="Proveedor"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                :loading="proveedorLoading"
+                @update:search="searchProveedores"
+              />
+            </v-col>
+            <v-col cols="12" md="2" class="d-none d-md-flex"></v-col>
+            <v-col cols="12" md="2" class="d-flex align-center justify-md-end">
+              <v-btn
+                color="primary"
+                variant="tonal"
+                class="text-none w-100"
+                :loading="saldosLoading"
+                @click="loadSaldos"
+              >
+                Buscar
+              </v-btn>
+            </v-col>
+          </v-row>
 
           <v-divider class="my-4" />
 
@@ -111,7 +137,11 @@
             item-key="productoId"
             density="compact"
             height="520"
-          />
+          >
+            <template #item.proveedor="{ item }">
+              {{ item.proveedor || 'SIN PROVEEDOR' }}
+            </template>
+          </v-data-table>
         </v-card>
       </v-window-item>
 
@@ -133,6 +163,17 @@
               density="comfortable"
               hide-details
               style="max-width: 160px"
+            />
+            <v-select
+              v-model="movFilters.facturada"
+              :items="facturacionOptions"
+              item-title="label"
+              item-value="value"
+              label="Facturacion"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              style="max-width: 220px"
             />
             <v-text-field
               v-model="movFilters.desde"
@@ -168,11 +209,35 @@
                   <div>
                     <div class="text-subtitle-2">{{ mov.tipo }}</div>
                     <div class="text-caption text-medium-emphasis">{{ mov.motivo }}</div>
+                    <div
+                      v-if="mov.tipo === 'AJUSTE' && mov.motivo"
+                      class="text-caption text-medium-emphasis"
+                    >
+                      Motivo ajuste: {{ mov.motivo }}
+                    </div>
                     <div v-if="mov.ventaNumero" class="text-caption text-medium-emphasis">
                       Venta N\u00b0 {{ mov.ventaNumero }}
                     </div>
+                    <div
+                      v-if="mov.ventaNumero && mov.ventaFacturada !== null && mov.ventaFacturada !== undefined"
+                      class="text-caption text-medium-emphasis"
+                    >
+                      {{ mov.ventaFacturada ? 'Facturada' : 'No facturada' }}
+                    </div>
                   </div>
-                  <div class="text-caption text-medium-emphasis">{{ formatDate(mov.fecha) }}</div>
+                  <div class="d-flex align-center gap-2">
+                    <v-btn
+                      v-if="mov.ventaNumero"
+                      size="small"
+                      variant="tonal"
+                      color="primary"
+                      class="text-none"
+                      @click.stop="printVentaTicket(mov.ventaNumero)"
+                    >
+                      Imprimir ticket
+                    </v-btn>
+                    <div class="text-caption text-medium-emphasis">{{ formatDate(mov.fecha) }}</div>
+                  </div>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
@@ -337,7 +402,10 @@ const tab = ref('saldos');
 
 const saldos = ref([]);
 const saldosLoading = ref(false);
-const saldoSearch = ref('');
+const saldoProducto = ref(null);
+const saldoProductosLookup = ref([]);
+const saldoProductosLoading = ref(false);
+const saldoProveedor = ref(null);
 
 const ajusteItems = ref([]);
 const ajusteLoading = ref(false);
@@ -357,9 +425,15 @@ const movLoading = ref(false);
 const movFilters = reactive({
   productoId: '',
   ventaNumero: '',
+  facturada: '',
   desde: '',
   hasta: ''
 });
+const facturacionOptions = [
+  { label: 'Todas', value: '' },
+  { label: 'Facturadas', value: 'true' },
+  { label: 'No facturadas', value: 'false' }
+];
 
 const alertas = ref([]);
 const alertasLoading = ref(false);
@@ -370,6 +444,7 @@ const proveedorLoading = ref(false);
 const remitoDialog = ref(false);
 const remitoItems = ref([]);
 const remitoLoading = ref(false);
+const printingVentaTicket = ref(false);
 
 const snackbar = ref({
   show: false,
@@ -380,6 +455,7 @@ const snackbar = ref({
 
 const saldoHeaders = [
   { title: 'Producto', value: 'nombre' },
+  { title: 'Proveedor', value: 'proveedor' },
   { title: 'SKU', value: 'sku' },
   { title: 'Cantidad', value: 'cantidadActual', align: 'end' }
 ];
@@ -405,16 +481,31 @@ const extractProblemMessage = (data) => {
 };
 
 const mapSaldoItems = (items) =>
-  (items || []).map((item) => ({
-    ...item,
-    label: `${item.nombre} (${item.sku})`
-  }));
+  (items || [])
+    .slice()
+    .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
+    .map((item) => ({
+      ...item,
+      label: `${item.nombre} (${item.sku})`
+    }));
+
+const mapSaldoLookup = (items) =>
+  (items || [])
+    .slice()
+    .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
+    .map((item) => ({
+      ...item,
+      label: `${item.nombre} (${item.sku})`
+    }));
 
 const mapProveedorItems = (items) =>
-  (items || []).map((item) => ({
-    ...item,
-    label: `${item.name} (${item.telefono || 'sin tel'})`
-  }));
+  (items || [])
+    .slice()
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'))
+    .map((item) => ({
+      ...item,
+      label: `${item.name} (${item.telefono || 'sin tel'})`
+    }));
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -425,17 +516,126 @@ const formatDate = (value) => {
   }
 };
 
+const formatMoney = (value) =>
+  new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 0
+  }).format(Number(value || 0));
+
+const formatDateTime = (value) => {
+  if (!value) return '-';
+  try {
+    return new Date(value).toLocaleString('es-AR');
+  } catch {
+    return value;
+  }
+};
+
+const printVentaTicket = async (ventaNumero) => {
+  if (!ventaNumero || printingVentaTicket.value) return;
+  printingVentaTicket.value = true;
+  try {
+    const { response, data } = await getJson(`/api/v1/ventas/numero/${ventaNumero}/ticket`);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+
+    const ventaData = data?.venta;
+    const pagosData = data?.pagos || [];
+    if (!ventaData) {
+      throw new Error('No se encontro el detalle de la venta.');
+    }
+
+    const win = window.open('', '_blank', 'width=380,height=600');
+    if (!win) return;
+
+    const itemsRows = (ventaData.items || [])
+      .map((item) => {
+        const subtotal = item.subtotal ?? item.cantidad * item.precioUnitario;
+        return `
+          <tr>
+            <td>${item.nombre}</td>
+            <td style="text-align:right">${item.cantidad}</td>
+            <td style="text-align:right">${formatMoney(item.precioUnitario)}</td>
+            <td style="text-align:right">${formatMoney(subtotal)}</td>
+          </tr>`;
+      })
+      .join('');
+
+    const pagosRows = (pagosData || [])
+      .map(
+        (pago) =>
+          `<tr><td>${pago.medioPago}</td><td style="text-align:right">${formatMoney(pago.monto)}</td></tr>`
+      )
+      .join('');
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>Ticket venta</title>
+          <style>
+            body { font-family: Arial, sans-serif; font-size: 12px; padding: 10px; }
+            h1 { margin: 0 0 6px 0; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border-bottom: 1px dashed #ccc; padding: 4px 0; }
+            th { text-align: left; font-weight: 600; }
+          </style>
+        </head>
+        <body>
+          <h1>Ticket de venta</h1>
+          <div>Venta N°: ${ventaData.numero ?? '-'}</div>
+          <div>Fecha: ${formatDateTime(ventaData.createdAt)}</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th style="text-align:right">Cant</th>
+                <th style="text-align:right">Precio</th>
+                <th style="text-align:right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsRows}
+            </tbody>
+          </table>
+          <div style="margin-top:8px"><strong>Total: ${formatMoney(ventaData.totalNeto)}</strong></div>
+          <div style="margin-top:8px">Pagos</div>
+          <table>
+            <tbody>
+              ${pagosRows || '<tr><td>Sin detalle</td><td></td></tr>'}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
+    setTimeout(() => win.close(), 300);
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo imprimir el ticket.');
+  } finally {
+    printingVentaTicket.value = false;
+  }
+};
+
 const loadSaldos = async () => {
   saldosLoading.value = true;
   try {
     const params = new URLSearchParams();
-    if (saldoSearch.value.trim()) params.set('search', saldoSearch.value.trim());
+    const productSearch = saldoProducto.value?.sku || saldoProducto.value?.nombre || '';
+    if (productSearch.trim()) params.set('search', productSearch.trim());
+    if (saldoProveedor.value?.id) params.set('proveedorId', saldoProveedor.value.id);
     const { response, data } = await getJson(`/api/v1/stock/saldos?${params.toString()}`);
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
-    saldos.value = data || [];
+    saldos.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
     ajusteItems.value = mapSaldoItems(saldos.value);
+    saldoProductosLookup.value = mapSaldoLookup(saldos.value);
   } catch (err) {
     flash('error', err?.message || 'No se pudieron cargar saldos.');
   } finally {
@@ -443,11 +643,34 @@ const loadSaldos = async () => {
   }
 };
 
+const searchSaldoProductos = async (term) => {
+  saldoProductosLoading.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (term && term.trim()) params.set('search', term.trim());
+    if (saldoProveedor.value?.id) params.set('proveedorId', saldoProveedor.value.id);
+    const { response, data } = await getJson(`/api/v1/stock/saldos?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+    saldoProductosLookup.value = mapSaldoLookup(data || []);
+  } catch (err) {
+    flash('error', err?.message || 'No se pudieron buscar productos.');
+  } finally {
+    saldoProductosLoading.value = false;
+  }
+};
+
+const onSaldoProductoChanged = async () => {
+  await loadSaldos();
+};
+
 const searchAjusteProductos = async (term) => {
   ajusteLoading.value = true;
   try {
     const params = new URLSearchParams();
     if (term && term.trim()) params.set('search', term.trim());
+    if (saldoProveedor.value?.id) params.set('proveedorId', saldoProveedor.value.id);
     const { response, data } = await getJson(`/api/v1/stock/saldos?${params.toString()}`);
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
@@ -538,6 +761,9 @@ const loadMovimientos = async () => {
     if (movFilters.ventaNumero && movFilters.ventaNumero.toString().trim()) {
       params.set('ventaNumero', movFilters.ventaNumero.toString().trim());
     }
+    if (movFilters.facturada === 'true' || movFilters.facturada === 'false') {
+      params.set('facturada', movFilters.facturada);
+    }
     if (movFilters.desde) params.set('desde', movFilters.desde);
     if (movFilters.hasta) params.set('hasta', movFilters.hasta);
 
@@ -545,7 +771,12 @@ const loadMovimientos = async () => {
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
-    movimientos.value = data || [];
+    movimientos.value = (data || []).map((mov) => ({
+      ...mov,
+      items: (mov.items || [])
+        .slice()
+        .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
+    }));
   } catch (err) {
     flash('error', err?.message || 'No se pudieron cargar movimientos.');
   } finally {
@@ -565,7 +796,9 @@ const loadAlertas = async () => {
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
-    alertas.value = data || [];
+    alertas.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
   } catch (err) {
     flash('error', err?.message || 'No se pudieron cargar alertas.');
   } finally {
@@ -619,7 +852,7 @@ const generarRemito = async () => {
 
   remitoLoading.value = true;
   try {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5072';
     const proveedorId = alertaProveedor.value?.id || null;
     const response = await fetch(`${baseUrl}/api/v1/stock/alertas/remito`, {
       method: 'POST',
@@ -695,6 +928,14 @@ watch(alertaProveedor, () => {
   }
 });
 
+watch(saldoProveedor, () => {
+  saldoProducto.value = null;
+  searchSaldoProductos('');
+  if (tab.value === 'saldos') {
+    loadSaldos();
+  }
+});
+
 watch(ajusteProducto, (value) => {
   if (!value) {
     ajusteCantidadActual.value = 0;
@@ -707,6 +948,8 @@ watch(ajusteProducto, (value) => {
 });
 
 onMounted(() => {
+  searchProveedores('');
+  searchSaldoProductos('');
   loadSaldos();
 });
 </script>
@@ -716,11 +959,4 @@ onMounted(() => {
   animation: fade-in 0.3s ease;
 }
 
-.sticky-tabs {
-  position: sticky;
-  top: 72px;
-  z-index: 10;
-  background: rgba(245, 245, 242, 0.95);
-  backdrop-filter: blur(4px);
-}
 </style>

@@ -26,6 +26,7 @@ public interface IStockRepository
         Guid tenantId,
         Guid sucursalId,
         string? search,
+        Guid? proveedorId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<StockAlertaDto>> GetAlertasAsync(

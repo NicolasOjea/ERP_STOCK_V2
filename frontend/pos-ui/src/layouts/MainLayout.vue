@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-layout>
     <v-navigation-drawer
       v-model="drawer"
@@ -28,6 +28,18 @@
           />
         </v-list>
         <v-spacer />
+        <v-divider />
+        <div class="pa-2">
+          <v-list density="comfortable" nav>
+            <v-list-item
+              v-if="auth.hasPermission('PERM_PRODUCTO_VER')"
+              to="/empresa"
+              prepend-icon="mdi-domain"
+              title="Datos de mi empresa"
+              rounded
+            />
+          </v-list>
+        </div>
         <v-divider />
         <div class="pa-4 text-caption text-medium-emphasis">
           <div>Tenant: {{ shortId(auth.tenantId) }}</div>
@@ -88,14 +100,7 @@ const menuItems = [
     permission: 'PERM_PRODUCTO_VER'
   },
   {
-    title: 'Proveedores',
-    icon: 'mdi-truck-outline',
-    to: { path: '/productos', query: { tab: 'proveedores' } },
-    path: '/productos',
-    permission: 'PERM_PROVEEDOR_GESTIONAR'
-  },
-  {
-    title: 'Remitos',
+    title: 'Ingreso',
     icon: 'mdi-file-document-outline',
     to: '/remitos',
     permission: 'PERM_COMPRAS_REGISTRAR'
@@ -136,6 +141,9 @@ const currentTitle = computed(() => {
   if (route.path.startsWith('/productos') && route.query.tab === 'proveedores') {
     return 'Proveedores';
   }
+  if (route.path.startsWith('/empresa')) {
+    return 'Datos de mi empresa';
+  }
 
   const match = menuItems.find((item) => {
     const path = item.path || item.to;
@@ -173,3 +181,4 @@ const logout = () => {
   gap: 8px;
 }
 </style>
+

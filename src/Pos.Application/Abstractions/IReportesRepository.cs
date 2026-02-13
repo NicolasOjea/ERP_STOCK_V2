@@ -4,6 +4,13 @@ namespace Pos.Application.Abstractions;
 
 public interface IReportesRepository
 {
+    Task<ReportResumenVentasDto> GetResumenVentasAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        DateTimeOffset? desde,
+        DateTimeOffset? hasta,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<VentaPorDiaItemDto>> GetVentasPorDiaAsync(
         Guid tenantId,
         Guid sucursalId,
@@ -36,7 +43,7 @@ public interface IReportesRepository
     Task<IReadOnlyList<StockInmovilizadoItemDto>> GetStockInmovilizadoAsync(
         Guid tenantId,
         Guid sucursalId,
-        int dias,
-        DateTimeOffset nowUtc,
+        DateTimeOffset? desde,
+        DateTimeOffset? hasta,
         CancellationToken cancellationToken = default);
 }

@@ -132,6 +132,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
             motivo,
             nowUtc,
             null,
+            null,
             itemDtos);
 
         return new StockMovimientoRegisterResult(dto, cambios);
@@ -142,6 +143,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
         Guid sucursalId,
         Guid? productoId,
         long? ventaNumero,
+        bool? facturada,
         DateTimeOffset? desde,
         DateTimeOffset? hasta,
         CancellationToken cancellationToken = default)
@@ -173,6 +175,18 @@ public sealed class StockMovementRepository : IStockMovementRepository
             movimientosQuery = movimientosQuery.Where(m => m.VentaNumero == numero);
         }
 
+        if (facturada.HasValue)
+        {
+            var facturadaValue = facturada.Value;
+            movimientosQuery = movimientosQuery.Where(m =>
+                m.VentaNumero.HasValue
+                && _dbContext.Ventas.AsNoTracking().Any(v =>
+                    v.TenantId == tenantId
+                    && v.SucursalId == sucursalId
+                    && v.Numero == m.VentaNumero.Value
+                    && v.Facturada == facturadaValue));
+        }
+
         var movimientos = await movimientosQuery
             .OrderByDescending(m => m.Fecha)
             .ToListAsync(cancellationToken);
@@ -183,6 +197,18 @@ public sealed class StockMovementRepository : IStockMovementRepository
         }
 
         var movimientoIds = movimientos.Select(m => m.Id).ToList();
+        var numerosVenta = movimientos
+            .Where(m => m.VentaNumero.HasValue)
+            .Select(m => m.VentaNumero!.Value)
+            .Distinct()
+            .ToList();
+
+        var facturadaByNumero = numerosVenta.Count == 0
+            ? new Dictionary<long, bool>()
+            : await _dbContext.Ventas.AsNoTracking()
+                .Where(v => v.TenantId == tenantId && v.SucursalId == sucursalId && numerosVenta.Contains(v.Numero))
+                .Select(v => new { v.Numero, v.Facturada })
+                .ToDictionaryAsync(x => x.Numero, x => x.Facturada, cancellationToken);
 
         var items = await (from i in _dbContext.StockMovimientoItems.AsNoTracking()
                 join p in _dbContext.Productos.AsNoTracking().Where(p => p.TenantId == tenantId)
@@ -217,6 +243,9 @@ public sealed class StockMovementRepository : IStockMovementRepository
                 m.Motivo,
                 m.Fecha,
                 m.VentaNumero,
+                m.VentaNumero.HasValue && facturadaByNumero.TryGetValue(m.VentaNumero.Value, out var ventaFacturada)
+                    ? ventaFacturada
+                    : null,
                 list);
         }).ToList();
 

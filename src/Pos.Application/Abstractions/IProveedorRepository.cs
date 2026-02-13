@@ -28,8 +28,20 @@ public interface IProveedorRepository
         Guid proveedorId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ProveedorDeleteProductOptionDto>> GetDeleteProductOptionsAsync(
+        Guid tenantId,
+        Guid proveedorId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> DeleteAsync(
         Guid tenantId,
         Guid proveedorId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteWithProductResolutionAsync(
+        Guid tenantId,
+        Guid proveedorId,
+        IReadOnlyCollection<Guid> productIdsToDelete,
+        DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default);
 }

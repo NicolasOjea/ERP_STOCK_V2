@@ -20,6 +20,8 @@ using Pos.Application.UseCases.Auditoria;
 using Pos.Application.UseCases.Reportes;
 using Pos.Application.UseCases.Comprobantes;
 using Pos.Application.UseCases.Pricing.Strategies;
+using Pos.Application.UseCases.Categorias;
+using Pos.Application.UseCases.Empresa;
 
 namespace Pos.Application.Common;
 
@@ -45,6 +47,8 @@ public static class DependencyInjection
         services.AddScoped<AuditoriaService>();
         services.AddScoped<ReportesService>();
         services.AddScoped<ComprobantesService>();
+        services.AddScoped<CategoriaPrecioService>();
+        services.AddScoped<EmpresaDatosService>();
         services.AddScoped<IPromoStrategy, PorcCategoriaPromoStrategy>();
         services.AddScoped<IPromoStrategy, DosPorUnoPromoStrategy>();
         services.AddScoped<IPromoStrategy, ComboPromoStrategy>();

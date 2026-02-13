@@ -36,6 +36,7 @@ public sealed class Venta : EntityBase
     public VentaEstado Estado { get; private set; }
     public decimal TotalNeto { get; private set; }
     public decimal TotalPagos { get; private set; }
+    public bool Facturada { get; private set; }
 
     public void CambiarEstado(VentaEstado estado, DateTimeOffset updatedAtUtc)
     {
@@ -43,13 +44,14 @@ public sealed class Venta : EntityBase
         MarkUpdated(updatedAtUtc);
     }
 
-    public void Confirmar(decimal totalNeto, decimal totalPagos, DateTimeOffset updatedAtUtc)
+    public void Confirmar(decimal totalNeto, decimal totalPagos, bool facturada, DateTimeOffset updatedAtUtc)
     {
         if (totalNeto < 0) throw new ArgumentException("TotalNeto must be >= 0.", nameof(totalNeto));
         if (totalPagos < 0) throw new ArgumentException("TotalPagos must be >= 0.", nameof(totalPagos));
 
         TotalNeto = totalNeto;
         TotalPagos = totalPagos;
+        Facturada = facturada;
         Estado = VentaEstado.Confirmada;
         MarkUpdated(updatedAtUtc);
     }

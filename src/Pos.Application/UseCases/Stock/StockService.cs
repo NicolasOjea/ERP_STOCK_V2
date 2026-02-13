@@ -143,11 +143,24 @@ public sealed class StockService
         return updated;
     }
 
-    public async Task<IReadOnlyList<StockSaldoDto>> GetSaldosAsync(string? search, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<StockSaldoDto>> GetSaldosAsync(
+        string? search,
+        Guid? proveedorId,
+        CancellationToken cancellationToken)
     {
+        if (proveedorId.HasValue && proveedorId.Value == Guid.Empty)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["proveedorId"] = new[] { "El proveedor es invalido." }
+                });
+        }
+
         var tenantId = EnsureTenant();
         var sucursalId = EnsureSucursal();
-        return await _stockRepository.GetSaldosAsync(tenantId, sucursalId, search, cancellationToken);
+        return await _stockRepository.GetSaldosAsync(tenantId, sucursalId, search, proveedorId, cancellationToken);
     }
 
     public async Task<StockConfigDto> GetStockConfigAsync(Guid productId, CancellationToken cancellationToken)
@@ -403,6 +416,7 @@ public sealed class StockService
     public async Task<IReadOnlyList<StockMovimientoDto>> GetMovimientosAsync(
         Guid? productoId,
         long? ventaNumero,
+        bool? facturada,
         DateTimeOffset? desde,
         DateTimeOffset? hasta,
         CancellationToken cancellationToken)
@@ -440,7 +454,7 @@ public sealed class StockService
                 });
         }
 
-        return await _stockMovementRepository.SearchAsync(tenantId, sucursalId, productoId, ventaNumero, desde, hasta, cancellationToken);
+        return await _stockMovementRepository.SearchAsync(tenantId, sucursalId, productoId, ventaNumero, facturada, desde, hasta, cancellationToken);
     }
 
     private Guid EnsureTenant()

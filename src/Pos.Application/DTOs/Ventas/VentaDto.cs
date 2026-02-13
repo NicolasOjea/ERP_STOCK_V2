@@ -10,4 +10,9 @@ public sealed record VentaDto(
     decimal TotalNeto,
     decimal TotalPagos,
     DateTimeOffset CreatedAt,
-    IReadOnlyCollection<VentaItemDto> Items);
+    IReadOnlyCollection<VentaItemDto> Items,
+    bool Facturada = false);
+
+public sealed record VentaTicketDto(
+    VentaDto Venta,
+    IReadOnlyCollection<VentaPagoDto> Pagos);

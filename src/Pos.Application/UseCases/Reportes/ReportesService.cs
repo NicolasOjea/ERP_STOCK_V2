@@ -25,6 +25,7 @@ public sealed class ReportesService
         DateTimeOffset? hasta,
         CancellationToken cancellationToken)
     {
+        (desde, hasta) = NormalizeRangeToUtc(desde, hasta);
         ValidateRango(desde, hasta);
 
         var tenantId = EnsureTenant();
@@ -64,11 +65,26 @@ public sealed class ReportesService
         return new ReportChartDto(labels, series);
     }
 
+    public async Task<ReportResumenVentasDto> GetResumenVentasAsync(
+        DateTimeOffset? desde,
+        DateTimeOffset? hasta,
+        CancellationToken cancellationToken)
+    {
+        (desde, hasta) = NormalizeRangeToUtc(desde, hasta);
+        ValidateRango(desde, hasta);
+
+        var tenantId = EnsureTenant();
+        var sucursalId = EnsureSucursal();
+
+        return await _repository.GetResumenVentasAsync(tenantId, sucursalId, desde, hasta, cancellationToken);
+    }
+
     public async Task<ReportChartDto> GetMediosPagoAsync(
         DateTimeOffset? desde,
         DateTimeOffset? hasta,
         CancellationToken cancellationToken)
     {
+        (desde, hasta) = NormalizeRangeToUtc(desde, hasta);
         ValidateRango(desde, hasta);
 
         var tenantId = EnsureTenant();
@@ -92,6 +108,7 @@ public sealed class ReportesService
         int? top,
         CancellationToken cancellationToken)
     {
+        (desde, hasta) = NormalizeRangeToUtc(desde, hasta);
         ValidateRango(desde, hasta);
 
         var finalTop = top ?? DefaultTop;
@@ -117,6 +134,7 @@ public sealed class ReportesService
         DateTimeOffset? hasta,
         CancellationToken cancellationToken)
     {
+        (desde, hasta) = NormalizeRangeToUtc(desde, hasta);
         ValidateRango(desde, hasta);
 
         var tenantId = EnsureTenant();
@@ -127,23 +145,17 @@ public sealed class ReportesService
     }
 
     public async Task<ReportTableDto<StockInmovilizadoItemDto>> GetStockInmovilizadoAsync(
-        int dias,
+        DateTimeOffset? desde,
+        DateTimeOffset? hasta,
         CancellationToken cancellationToken)
     {
-        if (dias <= 0)
-        {
-            throw new ValidationException(
-                "Validacion fallida.",
-                new Dictionary<string, string[]>
-                {
-                    ["dias"] = new[] { "Los dias deben ser mayores a 0." }
-                });
-        }
+        (desde, hasta) = NormalizeRangeToUtc(desde, hasta);
+        ValidateRango(desde, hasta);
 
         var tenantId = EnsureTenant();
         var sucursalId = EnsureSucursal();
 
-        var data = await _repository.GetStockInmovilizadoAsync(tenantId, sucursalId, dias, DateTimeOffset.UtcNow, cancellationToken);
+        var data = await _repository.GetStockInmovilizadoAsync(tenantId, sucursalId, desde, hasta, cancellationToken);
         return new ReportTableDto<StockInmovilizadoItemDto>(data);
     }
 
@@ -158,6 +170,15 @@ public sealed class ReportesService
                     ["fecha"] = new[] { "El rango de fechas es invalido." }
                 });
         }
+    }
+
+    private static (DateTimeOffset? Desde, DateTimeOffset? Hasta) NormalizeRangeToUtc(
+        DateTimeOffset? desde,
+        DateTimeOffset? hasta)
+    {
+        var desdeUtc = desde?.ToUniversalTime();
+        var hastaUtc = hasta?.ToUniversalTime();
+        return (desdeUtc, hastaUtc);
     }
 
     private Guid EnsureTenant()

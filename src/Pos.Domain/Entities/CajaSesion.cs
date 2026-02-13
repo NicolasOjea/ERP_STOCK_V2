@@ -15,22 +15,26 @@ public sealed class CajaSesion : EntityBase
         Guid cajaId,
         Guid sucursalId,
         decimal montoInicial,
+        string turno,
         DateTimeOffset aperturaAt,
         DateTimeOffset createdAtUtc)
         : base(id, tenantId, createdAtUtc)
     {
         if (cajaId == Guid.Empty) throw new ArgumentException("CajaId is required.", nameof(cajaId));
         if (sucursalId == Guid.Empty) throw new ArgumentException("SucursalId is required.", nameof(sucursalId));
+        if (string.IsNullOrWhiteSpace(turno)) throw new ArgumentException("Turno is required.", nameof(turno));
 
         CajaId = cajaId;
         SucursalId = sucursalId;
         MontoInicial = montoInicial;
+        Turno = turno.Trim().ToUpperInvariant();
         AperturaAt = aperturaAt;
         Estado = CajaSesionEstado.Abierta;
     }
 
     public Guid CajaId { get; private set; }
     public Guid SucursalId { get; private set; }
+    public string Turno { get; private set; } = "MANANA";
     public decimal MontoInicial { get; private set; }
     public decimal? MontoCierre { get; private set; }
     public decimal DiferenciaTotal { get; private set; }

@@ -4,6 +4,7 @@ using Pos.Application.Abstractions;
 using Pos.Application.DTOs.Products;
 using Pos.Application.DTOs.Etiquetas;
 using Pos.Domain.Entities;
+using Pos.Domain.Enums;
 using Pos.Domain.Exceptions;
 using Pos.Infrastructure.Persistence;
 
@@ -70,6 +71,8 @@ public sealed class ProductRepository : IProductRepository
                     Proveedor = pr != null ? pr.Name : null,
                     p.PrecioBase,
                     p.PrecioVenta,
+                    p.PricingMode,
+                    p.MargenGananciaPct,
                     p.IsActive
                 })
             .ToListAsync(cancellationToken);
@@ -95,6 +98,8 @@ public sealed class ProductRepository : IProductRepository
                 r.Proveedor,
                 r.PrecioBase,
                 r.PrecioVenta,
+                r.PricingMode.ToString().ToUpperInvariant(),
+                r.MargenGananciaPct,
                 r.IsActive);
         }).ToList();
 
@@ -146,6 +151,8 @@ public sealed class ProductRepository : IProductRepository
             product.Proveedor,
             product.Product.PrecioBase,
             product.Product.PrecioVenta,
+            product.Product.PricingMode.ToString().ToUpperInvariant(),
+            product.Product.MargenGananciaPct,
             product.Product.IsActive,
             codes);
     }
@@ -221,7 +228,15 @@ public sealed class ProductRepository : IProductRepository
         }
 
         var precioBase = request.PrecioBase ?? 1m;
-        var precioVenta = request.PrecioVenta ?? precioBase;
+        var pricingMode = ParsePricingMode(request.PricingMode, ProductPricingMode.FijoPct);
+        var pricing = await ResolvePricingAsync(
+            tenantId,
+            request.CategoriaId,
+            pricingMode,
+            request.MargenGananciaPct,
+            precioBase,
+            request.PrecioVenta,
+            cancellationToken);
 
         var product = new Producto(
             Guid.NewGuid(),
@@ -233,7 +248,9 @@ public sealed class ProductRepository : IProductRepository
             request.ProveedorId,
             nowUtc,
             precioBase,
-            precioVenta,
+            pricing.PrecioVenta,
+            pricingMode,
+            pricing.MargenGananciaPct,
             request.IsActive ?? true);
 
         _dbContext.Productos.Add(product);
@@ -346,9 +363,31 @@ public sealed class ProductRepository : IProductRepository
         var newProveedorId = request.ProveedorId ?? product.ProveedorId;
         var newIsActive = request.IsActive ?? product.IsActive;
         var newPrecioBase = request.PrecioBase ?? product.PrecioBase;
-        var newPrecioVenta = request.PrecioVenta ?? product.PrecioVenta;
+        var newPricingMode = ParsePricingMode(request.PricingMode, product.PricingMode);
+        var requestedMargin = request.MargenGananciaPct.HasValue ? request.MargenGananciaPct : product.MargenGananciaPct;
+        var requestedPrecioVenta = request.PrecioVenta.HasValue ? request.PrecioVenta : product.PrecioVenta;
 
-        product.Update(newName, newSku, newCategoriaId, newMarcaId, newProveedorId, newPrecioBase, newPrecioVenta, newIsActive, nowUtc);
+        var pricing = await ResolvePricingAsync(
+            tenantId,
+            newCategoriaId,
+            newPricingMode,
+            requestedMargin,
+            newPrecioBase,
+            requestedPrecioVenta,
+            cancellationToken);
+
+        product.Update(
+            newName,
+            newSku,
+            newCategoriaId,
+            newMarcaId,
+            newProveedorId,
+            newPrecioBase,
+            pricing.PrecioVenta,
+            newPricingMode,
+            pricing.MargenGananciaPct,
+            newIsActive,
+            nowUtc);
 
         if (request.ProveedorId.HasValue)
         {
@@ -726,6 +765,108 @@ public sealed class ProductRepository : IProductRepository
             .ToListAsync(cancellationToken);
 
         return rows;
+    }
+
+    private static ProductPricingMode ParsePricingMode(string? value, ProductPricingMode fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        return value.Trim().ToUpperInvariant() switch
+        {
+            "MANUAL" => ProductPricingMode.Manual,
+            "CATEGORIA" => ProductPricingMode.Categoria,
+            _ => ProductPricingMode.FijoPct
+        };
+    }
+
+    private async Task<(decimal PrecioVenta, decimal? MargenGananciaPct)> ResolvePricingAsync(
+        Guid tenantId,
+        Guid? categoriaId,
+        ProductPricingMode pricingMode,
+        decimal? margenGananciaPct,
+        decimal precioBase,
+        decimal? precioVenta,
+        CancellationToken cancellationToken)
+    {
+        if (precioBase < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["precioBase"] = new[] { "El precio base no puede ser negativo." }
+                });
+        }
+
+        if (pricingMode == ProductPricingMode.Manual)
+        {
+            var manualPrice = precioVenta ?? 0m;
+            if (manualPrice < 0)
+            {
+                throw new ValidationException(
+                    "Validacion fallida.",
+                    new Dictionary<string, string[]>
+                    {
+                        ["precioVenta"] = new[] { "El precio manual no puede ser negativo." }
+                    });
+            }
+
+            return (manualPrice, null);
+        }
+
+        if (pricingMode == ProductPricingMode.Categoria)
+        {
+            if (!categoriaId.HasValue)
+            {
+                throw new ValidationException(
+                    "Validacion fallida.",
+                    new Dictionary<string, string[]>
+                    {
+                        ["categoriaId"] = new[] { "La categoria es obligatoria para precio por categoria." }
+                    });
+            }
+
+            var categoria = await _dbContext.Categorias.AsNoTracking()
+                .Where(c => c.TenantId == tenantId && c.Id == categoriaId.Value)
+                .Select(c => new { c.MargenGananciaPct })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (categoria is null)
+            {
+                throw new ValidationException(
+                    "Validacion fallida.",
+                    new Dictionary<string, string[]>
+                    {
+                        ["categoriaId"] = new[] { "La categoria no existe." }
+                    });
+            }
+
+            var calculated = CalculateSalePrice(precioBase, categoria.MargenGananciaPct);
+            return (calculated, categoria.MargenGananciaPct);
+        }
+
+        var margin = margenGananciaPct ?? 30m;
+        if (margin < 0)
+        {
+            throw new ValidationException(
+                "Validacion fallida.",
+                new Dictionary<string, string[]>
+                {
+                    ["margenGananciaPct"] = new[] { "El margen no puede ser negativo." }
+                });
+        }
+
+        return (CalculateSalePrice(precioBase, margin), margin);
+    }
+
+    private static decimal CalculateSalePrice(decimal precioBase, decimal margenPct)
+    {
+        var factor = 1m + (margenPct / 100m);
+        var value = precioBase * factor;
+        return decimal.Round(value, 4, MidpointRounding.AwayFromZero);
     }
 
     private async Task EnsureSkuCodeAsync(

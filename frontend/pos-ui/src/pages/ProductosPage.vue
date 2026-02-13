@@ -1,8 +1,9 @@
 <template>
   <div class="productos-page">
-    <v-tabs v-model="tab" color="primary" class="mb-4 sticky-tabs">
+    <v-tabs v-model="tab" color="primary" class="mb-4">
       <v-tab value="productos">Productos</v-tab>
       <v-tab value="proveedores">Proveedores</v-tab>
+      <v-tab value="listas-precio">Lista de precios</v-tab>
     </v-tabs>
 
     <v-window v-model="tab">
@@ -88,15 +89,6 @@
                     {{ item.isActive ? 'Activo' : 'Inactivo' }}
                   </v-chip>
                 </template>
-                <template #item.actions="{ item }">
-                  <v-btn
-                    icon="mdi-delete-outline"
-                    size="small"
-                    variant="text"
-                    color="error"
-                    @click.stop="openDeleteDialog(item)"
-                  />
-                </template>
               </v-data-table>
             </v-card>
           </v-col>
@@ -163,26 +155,53 @@
                   :error-messages="errors.precioBase"
                   @blur="validateField('precioBase')"
                 />
+                <v-select
+                  v-model="form.pricingMode"
+                  :items="pricingModeItems"
+                  label="Modo precio"
+                  variant="outlined"
+                  density="comfortable"
+                  item-title="title"
+                  item-value="value"
+                />
+                <v-autocomplete
+                  v-if="form.pricingMode === 'CATEGORIA'"
+                  v-model="form.categoriaId"
+                  :items="categoriasLookupDisplay"
+                  :loading="categoriaLoading"
+                  label="Categoria"
+                  item-title="displayTitle"
+                  item-value="id"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                  no-data-text="No hay categorias. Crea una en 'Lista de precios'."
+                  @update:search="searchCategorias"
+                  @focus="ensureCategoriasLookup"
+                />
+                <div
+                  v-if="form.pricingMode === 'CATEGORIA'"
+                  class="text-caption text-medium-emphasis mb-2"
+                >
+                  Categoria seleccionada: {{ categoriaSeleccionadaLabel }}
+                </div>
                 <v-text-field
+                  v-if="form.pricingMode === 'FIJO_PCT'"
                   v-model="form.margenPct"
-                  label="% Ganancia"
+                  label="% Ganancia fija"
                   variant="outlined"
                   density="comfortable"
                   type="number"
                   min="0"
                   step="0.01"
-                  :disabled="form.precioManual"
                   :error-messages="errors.margenPct"
                   @blur="validateField('margenPct')"
                 />
-                <v-checkbox
-                  v-model="form.precioManual"
-                  label="Precio manual"
-                  color="primary"
-                  hide-details
-                />
+                <div v-if="form.pricingMode === 'CATEGORIA'" class="text-caption text-medium-emphasis mb-2">
+                  Margen categoria: {{ Number(form.margenCategoriaPct || 0).toFixed(2) }}%
+                </div>
                 <v-text-field
-                  v-if="form.precioManual"
+                  v-if="form.pricingMode === 'MANUAL'"
                   v-model="form.precioVentaManual"
                   label="Precio venta manual"
                   variant="outlined"
@@ -326,15 +345,6 @@
                     {{ item.isActive ? 'Activo' : 'Inactivo' }}
                   </v-chip>
                 </template>
-                <template #item.actions="{ item }">
-                  <v-btn
-                    icon="mdi-delete-outline"
-                    size="small"
-                    variant="text"
-                    color="error"
-                    @click.stop="openDeleteProveedorDialog(item)"
-                  />
-                </template>
               </v-data-table>
             </v-card>
           </v-col>
@@ -402,6 +412,117 @@
           </v-col>
         </v-row>
       </v-window-item>
+
+      <v-window-item value="listas-precio">
+        <v-card class="pos-card pa-4 mb-4">
+          <div class="d-flex align-center gap-3">
+            <div>
+              <div class="text-h6">Lista de precios</div>
+              <div class="text-caption text-medium-emphasis">Margen por categoria</div>
+            </div>
+            <v-spacer />
+            <v-btn color="primary" class="text-none" @click="resetCategoriaForm">Nueva categoria</v-btn>
+          </div>
+
+          <div class="mt-4 d-flex flex-wrap align-center gap-3">
+            <v-text-field
+              v-model="categoriaSearch"
+              label="Buscar categoria"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              style="min-width: 280px"
+              @keyup.enter="loadCategorias"
+            />
+            <v-btn-toggle v-model="categoriaActivoFilter" density="comfortable" mandatory>
+              <v-btn value="all" class="text-none">Todos</v-btn>
+              <v-btn value="true" class="text-none">Activos</v-btn>
+              <v-btn value="false" class="text-none">Inactivos</v-btn>
+            </v-btn-toggle>
+            <v-btn color="primary" variant="tonal" class="text-none" :loading="categoriaLoadingTable" @click="loadCategorias">
+              Buscar
+            </v-btn>
+          </div>
+        </v-card>
+
+        <v-row dense>
+          <v-col cols="12" md="7">
+            <v-card class="pos-card pa-4">
+              <div class="text-h6">Categorias</div>
+              <v-data-table
+                :headers="categoriaHeaders"
+                :items="categoriasTable"
+                item-key="id"
+                class="mt-3"
+                density="compact"
+                height="520"
+                @click:row="selectCategoria"
+              >
+                <template #item.margenGananciaPct="{ item }">
+                  {{ Number(item.margenGananciaPct || 0).toFixed(2) }}%
+                </template>
+                <template #item.isActive="{ item }">
+                  <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
+                    {{ item.isActive ? 'Activo' : 'Inactivo' }}
+                  </v-chip>
+                </template>
+              </v-data-table>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="5">
+            <v-card class="pos-card pa-4">
+              <div class="d-flex align-center justify-space-between">
+                <div>
+                  <div class="text-h6">{{ categoriaForm.id ? 'Editar categoria' : 'Nueva categoria' }}</div>
+                  <div class="text-caption text-medium-emphasis">
+                    {{ categoriaForm.id ? shortId(categoriaForm.id) : 'Sin seleccionar' }}
+                  </div>
+                </div>
+                <v-btn color="primary" variant="tonal" class="text-none" :loading="categoriaSaving" @click="saveCategoria">
+                  Guardar
+                </v-btn>
+              </div>
+
+              <v-form class="mt-3">
+                <v-text-field
+                  v-model="categoriaForm.name"
+                  label="Nombre"
+                  variant="outlined"
+                  density="comfortable"
+                  :error-messages="categoriaErrors.name"
+                  @blur="validateCategoriaField('name')"
+                  required
+                />
+                <v-text-field
+                  v-model="categoriaForm.margenGananciaPct"
+                  label="% Ganancia"
+                  variant="outlined"
+                  density="comfortable"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  :error-messages="categoriaErrors.margenGananciaPct"
+                  @blur="validateCategoriaField('margenGananciaPct')"
+                  required
+                />
+                <v-checkbox
+                  v-model="categoriaForm.aplicarAProductos"
+                  label="Aplicar nuevo porcentaje a productos de la categoria"
+                  color="primary"
+                  hide-details
+                />
+                <v-switch
+                  :model-value="categoriaForm.isActive"
+                  label="Activo"
+                  color="primary"
+                  inset
+                  @update:model-value="(value) => (categoriaForm.isActive = value)"
+                />
+              </v-form>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-window-item>
     </v-window>
 
     <v-dialog v-model="dialogDesactivar" width="420">
@@ -413,35 +534,6 @@
         <v-card-actions class="justify-end">
           <v-btn variant="text" @click="cancelDeactivate">Cancelar</v-btn>
           <v-btn color="error" @click="confirmDeactivate">Desactivar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="dialogDeleteProduct" width="420">
-      <v-card>
-        <v-card-title>Borrar producto</v-card-title>
-        <v-card-text>
-          Vas a borrar del listado el producto
-          <strong>{{ deleteTargetName }}</strong>.
-          Esta accion es permanente. Queres continuar?
-        </v-card-text>
-        <v-card-actions class="justify-end">
-          <v-btn variant="text" :disabled="deletingProduct" @click="cancelDeleteProduct">Cancelar</v-btn>
-          <v-btn color="error" :loading="deletingProduct" @click="confirmDeleteProduct">Borrar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="dialogDeleteProveedor" width="420">
-      <v-card>
-        <v-card-title>Borrar proveedor</v-card-title>
-        <v-card-text>
-          Vas a borrar el proveedor <strong>{{ deleteProveedorTargetName }}</strong>.
-          Esta accion es permanente. Queres continuar?
-        </v-card-text>
-        <v-card-actions class="justify-end">
-          <v-btn variant="text" :disabled="deletingProveedor" @click="cancelDeleteProveedor">Cancelar</v-btn>
-          <v-btn color="error" :loading="deletingProveedor" @click="confirmDeleteProveedor">Borrar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -477,15 +569,19 @@ const activoFilter = ref('all');
 
 const proveedoresLookup = ref([]);
 const proveedorLoading = ref(false);
+const categoriaLoading = ref(false);
+const categoriasLookup = ref([]);
 
 const form = reactive({
   id: '',
   name: '',
   sku: '',
   proveedorId: '',
+  categoriaId: '',
   precioBase: '',
+  pricingMode: 'FIJO_PCT',
   margenPct: '30',
-  precioManual: false,
+  margenCategoriaPct: '0',
   precioVentaManual: '',
   stockInicial: '',
   isActive: true
@@ -513,12 +609,6 @@ const errors = reactive({
 
 const dialogDesactivar = ref(false);
 const pendingActive = ref(true);
-const dialogDeleteProduct = ref(false);
-const deletingProduct = ref(false);
-const deleteTarget = ref(null);
-const dialogDeleteProveedor = ref(false);
-const deletingProveedor = ref(false);
-const deleteProveedorTarget = ref(null);
 
 const snackbar = ref({
   show: false,
@@ -530,11 +620,17 @@ const snackbar = ref({
 const headers = [
   { title: 'Nombre', value: 'name' },
   { title: 'SKU', value: 'sku' },
+  { title: 'Categoria', value: 'categoria' },
   { title: 'Proveedor', value: 'proveedor' },
   { title: 'Precio base', value: 'precioBase' },
   { title: 'Precio venta', value: 'precioVenta' },
-  { title: 'Estado', value: 'isActive' },
-  { title: '', value: 'actions', sortable: false, align: 'end' }
+  { title: 'Estado', value: 'isActive' }
+];
+
+const pricingModeItems = [
+  { title: '% fijo', value: 'FIJO_PCT' },
+  { title: 'Por categoria', value: 'CATEGORIA' },
+  { title: 'Manual', value: 'MANUAL' }
 ];
 
 const proveedorHeaders = [
@@ -542,8 +638,13 @@ const proveedorHeaders = [
   { title: 'Telefono', value: 'telefono' },
   { title: 'CUIT', value: 'cuit' },
   { title: 'Direccion', value: 'direccion' },
-  { title: 'Estado', value: 'isActive' },
-  { title: '', value: 'actions', sortable: false, align: 'end' }
+  { title: 'Estado', value: 'isActive' }
+];
+
+const categoriaHeaders = [
+  { title: 'Nombre', value: 'name' },
+  { title: '% Ganancia', value: 'margenGananciaPct' },
+  { title: 'Estado', value: 'isActive' }
 ];
 
 const proveedoresTable = ref([]);
@@ -566,13 +667,54 @@ const proveedorErrors = reactive({
   telefono: ''
 });
 
+const categoriasTable = ref([]);
+const categoriaSearch = ref('');
+const categoriaActivoFilter = ref('all');
+const categoriaLoadingTable = ref(false);
+const categoriaSaving = ref(false);
+
+const categoriaForm = reactive({
+  id: '',
+  name: '',
+  margenGananciaPct: '30',
+  aplicarAProductos: true,
+  isActive: true
+});
+
+const categoriaErrors = reactive({
+  name: '',
+  margenGananciaPct: ''
+});
+
 const formatMoney = (value) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value || 0);
 
+const categoriasLookupDisplay = computed(() =>
+  (categoriasLookup.value || []).map((item) => ({
+    ...item,
+    displayTitle: `${item.name || 'Sin nombre'} (${Number(item.margenGananciaPct || 0).toFixed(2)}%)`
+  }))
+);
+
+const categoriaSeleccionadaLabel = computed(() => {
+  if (!form.categoriaId) return 'Sin categoria';
+  const categoria = (categoriasLookup.value || []).find((item) => item.id === form.categoriaId);
+  if (!categoria) return 'Sin categoria';
+  return `${categoria.name || 'Sin nombre'} (${Number(categoria.margenGananciaPct || 0).toFixed(2)}%)`;
+});
+
 const precioVentaCalculado = computed(() => {
   const base = Number(form.precioBase);
-  const margen = Number(form.margenPct);
   if (Number.isNaN(base) || base <= 0) return 0;
+
+  if (form.pricingMode === 'MANUAL') {
+    const manual = Number(form.precioVentaManual);
+    return Number.isNaN(manual) || manual < 0 ? 0 : manual;
+  }
+
+  const margen = form.pricingMode === 'CATEGORIA'
+    ? Number(form.margenCategoriaPct || 0)
+    : Number(form.margenPct);
   if (Number.isNaN(margen) || margen < 0) return base;
   return base * (1 + margen / 100);
 });
@@ -581,9 +723,6 @@ const shortId = (value) => {
   if (!value) return 'n/a';
   return value.length > 8 ? value.slice(0, 8) : value;
 };
-
-const deleteTargetName = computed(() => deleteTarget.value?.name || 'este producto');
-const deleteProveedorTargetName = computed(() => deleteProveedorTarget.value?.name || 'este proveedor');
 
 const flash = (type, text) => {
   snackbar.value = {
@@ -631,7 +770,7 @@ const validateField = (field) => {
     }
   }
   if (field === 'margenPct') {
-    if (form.precioManual) {
+    if (form.pricingMode !== 'FIJO_PCT') {
       errors.margenPct = '';
     } else if (form.margenPct === '') {
       errors.margenPct = '';
@@ -642,7 +781,7 @@ const validateField = (field) => {
     }
   }
   if (field === 'precioVentaManual') {
-    if (!form.precioManual) {
+    if (form.pricingMode !== 'MANUAL') {
       errors.precioVentaManual = '';
     } else if (form.precioVentaManual === '') {
       errors.precioVentaManual = 'Precio venta obligatorio.';
@@ -726,7 +865,9 @@ const loadProducts = async () => {
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
-    products.value = data || [];
+    products.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
   } catch (err) {
     flash('error', err?.message || 'No se pudieron cargar los productos.');
   } finally {
@@ -752,12 +893,45 @@ const searchProveedores = async (term) => {
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
-    proveedoresLookup.value = data || [];
+    proveedoresLookup.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
   } catch (err) {
     flash('error', err?.message || 'No se pudieron cargar proveedores.');
   } finally {
     proveedorLoading.value = false;
   }
+};
+
+const applyCategoriaMargin = () => {
+  const categoria = categoriasLookup.value.find((item) => item.id === form.categoriaId);
+  form.margenCategoriaPct = categoria ? Number(categoria.margenGananciaPct || 0).toString() : '0';
+};
+
+const searchCategorias = async (term) => {
+  categoriaLoading.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (term && term.trim()) params.set('search', term.trim());
+    params.set('activo', 'true');
+    const { response, data } = await getJson(`/api/v1/categorias-precio?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+    categoriasLookup.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
+    applyCategoriaMargin();
+  } catch (err) {
+    flash('error', err?.message || 'No se pudieron cargar categorias.');
+  } finally {
+    categoriaLoading.value = false;
+  }
+};
+
+const ensureCategoriasLookup = async () => {
+  if (categoriasLookup.value.length > 0 || categoriaLoading.value) return;
+  await searchCategorias('');
 };
 
 const selectProduct = async (event, row) => {
@@ -772,13 +946,17 @@ const selectProduct = async (event, row) => {
     form.name = data.name || '';
     form.sku = data.sku || '';
     form.proveedorId = data.proveedorId || '';
+    form.categoriaId = data.categoriaId || '';
     form.isActive = data.isActive ?? true;
     const base = Number(data.precioBase ?? 0);
     const venta = Number(data.precioVenta ?? base);
     const margen = base > 0 ? ((venta / base) - 1) * 100 : 0;
     form.precioBase = base ? base.toString() : '';
+    form.pricingMode = data.pricingMode || 'FIJO_PCT';
     form.margenPct = Number.isFinite(margen) ? margen.toFixed(2) : '0';
-    form.precioManual = false;
+    form.margenCategoriaPct = data.margenGananciaPct != null
+      ? Number(data.margenGananciaPct).toString()
+      : form.margenCategoriaPct;
     form.precioVentaManual = venta ? venta.toString() : '';
     form.stockInicial = '';
 
@@ -794,6 +972,7 @@ const selectProduct = async (event, row) => {
     }
 
     clearErrors();
+    applyCategoriaMargin();
   } catch (err) {
     flash('error', err?.message || 'No se pudo cargar el producto.');
   }
@@ -804,9 +983,11 @@ const resetForm = () => {
   form.name = '';
   form.sku = '';
   form.proveedorId = '';
+  form.categoriaId = '';
   form.precioBase = '';
+  form.pricingMode = 'FIJO_PCT';
   form.margenPct = '30';
-  form.precioManual = false;
+  form.margenCategoriaPct = '0';
   form.precioVentaManual = '';
   form.stockInicial = '';
   form.isActive = true;
@@ -863,18 +1044,24 @@ const saveProduct = async () => {
   saving.value = true;
   try {
     const precioBase = form.precioBase === '' ? null : Number(form.precioBase);
-    const precioVenta = form.precioManual
+    const precioVenta = form.pricingMode === 'MANUAL'
       ? (form.precioVentaManual === '' ? null : Number(form.precioVentaManual))
       : (precioBase == null ? null : Number(precioVentaCalculado.value));
+    const margenGananciaPct = form.pricingMode === 'FIJO_PCT'
+      ? (form.margenPct === '' ? null : Number(form.margenPct))
+      : null;
 
     if (!form.id) {
       const payload = {
         name: form.name.trim(),
         sku: form.sku.trim(),
         proveedorId: form.proveedorId,
+        categoriaId: form.categoriaId || null,
         isActive: form.isActive,
         precioBase,
-        precioVenta
+        precioVenta,
+        pricingMode: form.pricingMode,
+        margenGananciaPct
       };
 
       const { response, data } = await postJson('/api/v1/productos', payload);
@@ -893,9 +1080,12 @@ const saveProduct = async () => {
       name: form.name.trim() || null,
       sku: form.sku.trim() || null,
       proveedorId: form.proveedorId,
+      categoriaId: form.categoriaId || null,
       isActive: form.isActive,
       precioBase,
-      precioVenta
+      precioVenta,
+      pricingMode: form.pricingMode,
+      margenGananciaPct
     };
 
     const { response, data } = await requestJson(`/api/v1/productos/${form.id}`, {
@@ -993,83 +1183,6 @@ const confirmDeactivate = () => {
   form.isActive = pendingActive.value;
 };
 
-const openDeleteDialog = (item) => {
-  if (!item?.id) return;
-  deleteTarget.value = item;
-  dialogDeleteProduct.value = true;
-};
-
-const cancelDeleteProduct = () => {
-  dialogDeleteProduct.value = false;
-  deleteTarget.value = null;
-};
-
-const confirmDeleteProduct = async () => {
-  if (!deleteTarget.value?.id || deletingProduct.value) return;
-
-  deletingProduct.value = true;
-  try {
-    const { response, data } = await requestJson(`/api/v1/productos/${deleteTarget.value.id}`, {
-      method: 'DELETE'
-    });
-
-    if (!response.ok) {
-      throw new Error(extractProblemMessage(data));
-    }
-
-    products.value = products.value.filter((p) => p.id !== deleteTarget.value.id);
-    if (form.id === deleteTarget.value.id) {
-      resetForm();
-    }
-
-    flash('success', 'Producto borrado.');
-    cancelDeleteProduct();
-  } catch (err) {
-    flash('error', err?.message || 'No se pudo borrar el producto.');
-  } finally {
-    deletingProduct.value = false;
-  }
-};
-
-const openDeleteProveedorDialog = (item) => {
-  if (!item?.id) return;
-  deleteProveedorTarget.value = item;
-  dialogDeleteProveedor.value = true;
-};
-
-const cancelDeleteProveedor = () => {
-  dialogDeleteProveedor.value = false;
-  deleteProveedorTarget.value = null;
-};
-
-const confirmDeleteProveedor = async () => {
-  if (!deleteProveedorTarget.value?.id || deletingProveedor.value) return;
-
-  deletingProveedor.value = true;
-  try {
-    const { response, data } = await requestJson(`/api/v1/proveedores/${deleteProveedorTarget.value.id}`, {
-      method: 'DELETE'
-    });
-
-    if (!response.ok) {
-      throw new Error(extractProblemMessage(data));
-    }
-
-    proveedoresTable.value = proveedoresTable.value.filter((p) => p.id !== deleteProveedorTarget.value.id);
-    proveedoresLookup.value = proveedoresLookup.value.filter((p) => p.id !== deleteProveedorTarget.value.id);
-    if (proveedorForm.id === deleteProveedorTarget.value.id) {
-      resetProveedorForm();
-    }
-
-    flash('success', 'Proveedor borrado.');
-    cancelDeleteProveedor();
-  } catch (err) {
-    flash('error', err?.message || 'No se pudo borrar el proveedor.');
-  } finally {
-    deletingProveedor.value = false;
-  }
-};
-
 const validateProveedorField = (field) => {
   if (field === 'name') {
     proveedorErrors.name = proveedorForm.name.trim() ? '' : 'El nombre es obligatorio.';
@@ -1100,7 +1213,9 @@ const loadProveedores = async () => {
     if (!response.ok) {
       throw new Error(extractProblemMessage(data));
     }
-    proveedoresTable.value = data || [];
+    proveedoresTable.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
   } catch (err) {
     flash('error', err?.message || 'No se pudieron cargar proveedores.');
   } finally {
@@ -1164,8 +1279,113 @@ const saveProveedor = async () => {
   }
 };
 
+const validateCategoriaField = (field) => {
+  if (field === 'name') {
+    categoriaErrors.name = categoriaForm.name.trim() ? '' : 'El nombre es obligatorio.';
+  }
+  if (field === 'margenGananciaPct') {
+    const value = Number(categoriaForm.margenGananciaPct);
+    categoriaErrors.margenGananciaPct = Number.isNaN(value) || value < 0
+      ? 'Margen invalido.'
+      : '';
+  }
+};
+
+const resetCategoriaForm = () => {
+  categoriaForm.id = '';
+  categoriaForm.name = '';
+  categoriaForm.margenGananciaPct = '30';
+  categoriaForm.aplicarAProductos = true;
+  categoriaForm.isActive = true;
+  categoriaErrors.name = '';
+  categoriaErrors.margenGananciaPct = '';
+};
+
+const loadCategorias = async () => {
+  categoriaLoadingTable.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (categoriaSearch.value.trim()) params.set('search', categoriaSearch.value.trim());
+    if (categoriaActivoFilter.value !== 'all') params.set('activo', categoriaActivoFilter.value);
+
+    const { response, data } = await getJson(`/api/v1/categorias-precio?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(extractProblemMessage(data));
+    }
+    categoriasTable.value = (data || [])
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
+    categoriasLookup.value = categoriasTable.value
+      .filter((item) => item.isActive)
+      .map((item) => ({ ...item }));
+    applyCategoriaMargin();
+  } catch (err) {
+    flash('error', err?.message || 'No se pudieron cargar categorias.');
+  } finally {
+    categoriaLoadingTable.value = false;
+  }
+};
+
+const selectCategoria = (event, row) => {
+  const categoria = row?.item?.raw ?? row?.item ?? row;
+  if (!categoria?.id) return;
+  categoriaForm.id = categoria.id;
+  categoriaForm.name = categoria.name || '';
+  categoriaForm.margenGananciaPct = Number(categoria.margenGananciaPct || 0).toString();
+  categoriaForm.aplicarAProductos = true;
+  categoriaForm.isActive = categoria.isActive ?? true;
+  categoriaErrors.name = '';
+  categoriaErrors.margenGananciaPct = '';
+};
+
+const saveCategoria = async () => {
+  if (categoriaSaving.value) return;
+  validateCategoriaField('name');
+  validateCategoriaField('margenGananciaPct');
+  if (categoriaErrors.name || categoriaErrors.margenGananciaPct) return;
+
+  categoriaSaving.value = true;
+  try {
+    const payload = {
+      name: categoriaForm.name.trim(),
+      margenGananciaPct: Number(categoriaForm.margenGananciaPct),
+      isActive: categoriaForm.isActive,
+      aplicarAProductos: categoriaForm.aplicarAProductos
+    };
+
+    if (!categoriaForm.id) {
+      const { response, data } = await postJson('/api/v1/categorias-precio', payload);
+      if (!response.ok) throw new Error(extractProblemMessage(data));
+      flash('success', 'Categoria creada');
+    } else {
+      const { response, data } = await requestJson(`/api/v1/categorias-precio/${categoriaForm.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(extractProblemMessage(data));
+      flash('success', 'Categoria actualizada');
+    }
+
+    await loadCategorias();
+    await loadProducts();
+    resetCategoriaForm();
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo guardar la categoria.');
+  } finally {
+    categoriaSaving.value = false;
+  }
+};
+
 const syncTabFromRoute = (value) => {
-  tab.value = value === 'proveedores' ? 'proveedores' : 'productos';
+  if (value === 'proveedores') {
+    tab.value = 'proveedores';
+    return;
+  }
+  if (value === 'listas-precio') {
+    tab.value = 'listas-precio';
+    return;
+  }
+  tab.value = 'productos';
 };
 
 watch(
@@ -1184,13 +1404,24 @@ watch(
 );
 
 watch(
-  () => form.precioManual,
+  () => form.pricingMode,
   (value) => {
-    if (value && !form.precioVentaManual) {
+    if (value === 'MANUAL' && !form.precioVentaManual) {
       form.precioVentaManual = precioVentaCalculado.value.toFixed(2);
+    }
+    if (value === 'CATEGORIA') {
+      applyCategoriaMargin();
+      ensureCategoriasLookup();
     }
     validateField('margenPct');
     validateField('precioVentaManual');
+  }
+);
+
+watch(
+  () => form.categoriaId,
+  () => {
+    applyCategoriaMargin();
   }
 );
 
@@ -1198,7 +1429,9 @@ onMounted(() => {
   syncTabFromRoute(route.query.tab);
   loadProducts();
   loadProveedores();
+  loadCategorias();
   searchProveedores('');
+  searchCategorias('');
 });
 </script>
 
@@ -1207,11 +1440,4 @@ onMounted(() => {
   animation: fade-in 0.3s ease;
 }
 
-.sticky-tabs {
-  position: sticky;
-  top: 72px;
-  z-index: 10;
-  background: rgba(245, 245, 242, 0.95);
-  backdrop-filter: blur(4px);
-}
 </style>

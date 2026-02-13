@@ -82,7 +82,61 @@ public sealed class VentaRepository : IVentaRepository
             venta.TotalNeto,
             venta.TotalPagos,
             venta.CreatedAt,
-            items);
+            items,
+            venta.Facturada);
+    }
+
+    public async Task<VentaTicketDto?> GetTicketByNumeroAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        long numeroVenta,
+        CancellationToken cancellationToken = default)
+    {
+        var venta = await _dbContext.Ventas.AsNoTracking()
+            .FirstOrDefaultAsync(
+                v => v.TenantId == tenantId && v.SucursalId == sucursalId && v.Numero == numeroVenta,
+                cancellationToken);
+
+        if (venta is null)
+        {
+            return null;
+        }
+
+        var items = await (from i in _dbContext.VentaItems.AsNoTracking()
+                join p in _dbContext.Productos.AsNoTracking() on i.ProductoId equals p.Id
+                where i.TenantId == tenantId && i.VentaId == venta.Id && p.TenantId == tenantId
+                orderby p.Name
+                select new VentaItemDto(
+                    i.Id,
+                    i.ProductoId,
+                    p.Name,
+                    p.Sku,
+                    i.Codigo,
+                    i.Cantidad,
+                    i.PrecioUnitario,
+                    i.Cantidad * i.PrecioUnitario))
+            .ToListAsync(cancellationToken);
+
+        var pagos = await _dbContext.VentaPagos.AsNoTracking()
+            .Where(vp => vp.TenantId == tenantId && vp.VentaId == venta.Id)
+            .OrderBy(vp => vp.CreatedAt)
+            .Select(vp => new VentaPagoDto(vp.Id, vp.MedioPago, vp.Monto))
+            .ToListAsync(cancellationToken);
+
+        var ventaDto = new VentaDto(
+            venta.Id,
+            venta.Numero,
+            venta.SucursalId,
+            venta.UserId,
+            venta.Estado.ToString().ToUpperInvariant(),
+            venta.ListaPrecio,
+            venta.TotalNeto,
+            venta.TotalPagos,
+            venta.CreatedAt,
+            items,
+            venta.Facturada);
+
+        return new VentaTicketDto(ventaDto, pagos);
     }
 
     public async Task<VentaItemChangeDto> AddItemByCodeAsync(
@@ -116,7 +170,7 @@ public sealed class VentaRepository : IVentaRepository
         }
 
         var product = await _dbContext.Productos.AsNoTracking()
-            .Where(p => p.TenantId == tenantId && p.Sku == code)
+            .Where(p => p.TenantId == tenantId && p.Sku == code && p.IsActive)
             .Select(p => new
             {
                 p.Id,
@@ -206,13 +260,13 @@ public sealed class VentaRepository : IVentaRepository
         }
 
         var product = await _dbContext.Productos.AsNoTracking()
-            .Where(p => p.TenantId == tenantId && p.Id == productId)
+            .Where(p => p.TenantId == tenantId && p.Id == productId && p.IsActive)
             .Select(p => new { p.Id, p.Name, p.Sku, p.PrecioBase, p.PrecioVenta })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (product is null)
         {
-            throw new NotFoundException("Producto no encontrado.");
+            throw new ConflictException("Producto inactivo o no encontrado.");
         }
 
         var codigoFinal = product.Sku;
@@ -509,7 +563,7 @@ public sealed class VentaRepository : IVentaRepository
 
         _dbContext.StockMovimientoItems.AddRange(movimientoItems);
 
-        venta.Confirmar(totalNeto, totalPagos, nowUtc);
+        venta.Confirmar(totalNeto, totalPagos, request.Facturada!.Value, nowUtc);
 
         var pagos = new List<VentaPago>();
         var pagosDto = new List<VentaPagoDto>();

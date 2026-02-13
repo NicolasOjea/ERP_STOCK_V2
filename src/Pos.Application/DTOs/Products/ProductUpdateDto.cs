@@ -8,4 +8,6 @@ public sealed record ProductUpdateDto(
     Guid? ProveedorId,
     bool? IsActive,
     decimal? PrecioBase,
-    decimal? PrecioVenta);
+    decimal? PrecioVenta,
+    string? PricingMode = null,
+    decimal? MargenGananciaPct = null);

@@ -21,7 +21,14 @@
       </div>
     </v-card>
 
-    <v-row dense>
+    <v-tabs v-model="tab" color="primary" class="mb-4">
+      <v-tab value="sesion">Sesion</v-tab>
+      <v-tab value="historial">Historial caja</v-tab>
+    </v-tabs>
+
+    <v-window v-model="tab">
+      <v-window-item value="sesion">
+        <v-row dense>
       <v-col cols="12" md="6">
         <v-card class="pos-card pa-4 mb-4">
           <div class="text-h6">Crear caja</div>
@@ -82,6 +89,15 @@
               type="number"
               min="0"
               step="0.01"
+              variant="outlined"
+              density="comfortable"
+              :disabled="isAbierta"
+              required
+            />
+            <v-select
+              v-model="turnoApertura"
+              :items="turnos"
+              label="Turno"
               variant="outlined"
               density="comfortable"
               :disabled="isAbierta"
@@ -292,7 +308,62 @@
           </div>
         </v-card>
       </v-col>
-    </v-row>
+        </v-row>
+      </v-window-item>
+
+      <v-window-item value="historial">
+        <v-card class="pos-card pa-4 mb-4">
+          <div class="d-flex flex-wrap align-center gap-3">
+            <v-text-field
+              v-model="historialFrom"
+              type="date"
+              label="Desde"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              style="max-width: 220px"
+            />
+            <v-text-field
+              v-model="historialTo"
+              type="date"
+              label="Hasta"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              style="max-width: 220px"
+            />
+            <v-btn color="primary" variant="tonal" class="text-none" :loading="historialLoading" @click="loadHistorial">
+              Buscar
+            </v-btn>
+          </div>
+        </v-card>
+
+        <v-card class="pos-card pa-4">
+          <div class="text-h6 mb-2">Cierres historicos</div>
+          <v-data-table
+            :headers="historialHeaders"
+            :items="historial"
+            item-key="sesionId"
+            density="compact"
+          >
+            <template #item.aperturaAt="{ item }">{{ formatDate(item.aperturaAt) }}</template>
+            <template #item.cierreAt="{ item }">{{ formatDate(item.cierreAt) }}</template>
+            <template #item.montoInicial="{ item }">{{ formatMoney(item.montoInicial) }}</template>
+            <template #item.totalContado="{ item }">{{ formatMoney(item.totalContado) }}</template>
+            <template #item.diferencia="{ item }">{{ formatMoney(item.diferencia) }}</template>
+            <template #item.rangoVentas="{ item }">
+              <span v-if="item.ventaDesde && item.ventaHasta">De {{ item.ventaDesde }} a {{ item.ventaHasta }}</span>
+              <span v-else>-</span>
+            </template>
+            <template #item.acciones="{ item }">
+              <v-btn variant="tonal" size="small" class="text-none" @click="printHistorial(item)">
+                Imprimir PDF
+              </v-btn>
+            </template>
+          </v-data-table>
+        </v-card>
+      </v-window-item>
+    </v-window>
 
     <v-dialog v-model="dialogCerrar" width="480">
       <v-card>
@@ -306,36 +377,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <v-card v-if="cierreResult" class="pos-card pa-4 mt-4">
-      <div class="d-flex align-center justify-space-between">
-        <div>
-          <div class="text-h6">Resumen final</div>
-          <div class="text-caption text-medium-emphasis">Ticket imprimible</div>
-        </div>
-        <v-btn variant="tonal" color="primary" class="text-none" @click="printTicket">
-          Imprimir
-        </v-btn>
-      </div>
-
-      <div class="ticket mt-3">
-        <div class="ticket-line">Caja: {{ shortId(cierreResult.cajaId) }}</div>
-        <div class="ticket-line">Sesion: {{ shortId(cierreResult.sesionId) }}</div>
-        <div class="ticket-line">Fecha cierre: {{ formatDate(cierreResult.cierreAt) }}</div>
-        <div class="ticket-line">Estado: {{ cierreResult.estado }}</div>
-        <div class="ticket-line">Total teorico: {{ formatMoney(cierreResult.totalTeorico) }}</div>
-        <div class="ticket-line">Total contado: {{ formatMoney(cierreResult.totalContado) }}</div>
-        <div class="ticket-line">Diferencia: {{ formatMoney(cierreResult.diferencia) }}</div>
-        <div class="ticket-line mt-2">Medios:</div>
-        <div
-          v-for="medio in cierreResult.medios"
-          :key="medio.medio"
-          class="ticket-line"
-        >
-          {{ medio.medio }} - T: {{ formatMoney(medio.teorico) }} / C: {{ formatMoney(medio.contado) }}
-        </div>
-      </div>
-    </v-card>
 
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top end" timeout="1800">
       <div class="d-flex align-center gap-2">
@@ -352,6 +393,7 @@ import { useAuthStore } from '../stores/auth';
 import { getJson, postJson } from '../services/apiClient';
 
 const auth = useAuthStore();
+const tab = ref('sesion');
 
 const session = ref(null);
 const resumen = ref(null);
@@ -368,6 +410,8 @@ const crearCajaErrors = ref({
   nombre: ''
 });
 const montoInicial = ref(0);
+const turnos = ['MANANA', 'TARDE', 'NOCHE'];
+const turnoApertura = ref('MANANA');
 
 const movimiento = ref({
   tipo: 'Retiro',
@@ -382,6 +426,7 @@ const efectivoContado = ref(0);
 const mediosCierre = ref([
   { medio: 'TARJETA', contado: 0 },
   { medio: 'TRANSFERENCIA', contado: 0 },
+  { medio: 'APLICATIVO', contado: 0 },
   { medio: 'OTRO', contado: 0 }
 ]);
 const motivoDiferencia = ref('');
@@ -391,6 +436,10 @@ const openLoading = ref(false);
 const movLoading = ref(false);
 const closeLoading = ref(false);
 const resumenLoading = ref(false);
+const historialLoading = ref(false);
+const historialFrom = ref('');
+const historialTo = ref('');
+const historial = ref([]);
 
 const snackbar = ref({
   show: false,
@@ -400,7 +449,18 @@ const snackbar = ref({
 });
 
 const tiposMovimiento = ['Retiro', 'Gasto', 'Ajuste'];
-const mediosPago = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'OTRO'];
+const mediosPago = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'APLICATIVO', 'OTRO'];
+const historialHeaders = [
+  { title: 'Cajero', value: 'cajero' },
+  { title: 'Turno', value: 'turno' },
+  { title: 'Apertura', value: 'aperturaAt' },
+  { title: 'Cierre', value: 'cierreAt' },
+  { title: 'Monto inicial', value: 'montoInicial' },
+  { title: 'Total contado', value: 'totalContado' },
+  { title: 'Diferencia', value: 'diferencia' },
+  { title: 'Ventas', value: 'rangoVentas' },
+  { title: '', value: 'acciones', align: 'end' }
+];
 
 const isAbierta = computed(() => session.value?.estado === 'ABIERTA');
 
@@ -420,6 +480,14 @@ const canClose = computed(() => {
 });
 
 const resumenMedios = computed(() => {
+  if (resumen.value?.medios?.length) {
+    return resumen.value.medios.map((medio) => ({
+      medio: medio.medio,
+      total: medio.teorico || 0,
+      teorico: medio.teorico || 0
+    }));
+  }
+
   const totals = {};
   movimientosLocal.value.forEach((mov) => {
     const key = mov.medioPago || 'EFECTIVO';
@@ -559,6 +627,7 @@ const loadSession = () => {
     session.value = JSON.parse(raw);
     cajaId.value = session.value.cajaId || '';
     montoInicial.value = session.value.montoInicial || 0;
+    turnoApertura.value = session.value.turno || 'MANANA';
   } catch {
     clearSession();
   }
@@ -590,7 +659,8 @@ const abrirCaja = async () => {
   try {
     const payload = {
       cajaId: cajaId.value,
-      montoInicial: Number(montoInicial.value || 0)
+      montoInicial: Number(montoInicial.value || 0),
+      turno: turnoApertura.value
     };
 
     const { response, data } = await postJson('/api/v1/caja/sesiones/abrir', payload);
@@ -682,6 +752,8 @@ const cerrarCaja = async () => {
     movimientosLocal.value = [];
     dialogCerrar.value = false;
     clearSession();
+    await loadHistorial();
+    tab.value = 'historial';
     flash('success', 'Caja cerrada');
   } catch (err) {
     flash('error', err?.message || 'No se pudo cerrar la caja.');
@@ -690,13 +762,71 @@ const cerrarCaja = async () => {
   }
 };
 
-const printTicket = () => {
-  window.print();
+const loadHistorial = async () => {
+  historialLoading.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (historialFrom.value) params.set('from', historialFrom.value);
+    if (historialTo.value) params.set('to', historialTo.value);
+    const { response, data } = await getJson(`/api/v1/caja/sesiones/historial?${params.toString()}`);
+    if (!response.ok) throw new Error(extractProblemMessage(data));
+    historial.value = data || [];
+  } catch (err) {
+    flash('error', err?.message || 'No se pudo cargar historial.');
+  } finally {
+    historialLoading.value = false;
+  }
+};
+
+const printHistorial = (row) => {
+  const win = window.open('', '_blank', 'width=900,height=680');
+  if (!win) return;
+
+  const rangeVentas = row.ventaDesde && row.ventaHasta
+    ? `Ventas realizadas de la ${row.ventaDesde} a la ${row.ventaHasta}`
+    : 'Sin ventas registradas en el turno';
+
+  win.document.write(`
+    <html>
+      <head>
+        <title>Historial caja</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 16px; }
+          h2 { margin: 0 0 8px; }
+          .line { margin: 4px 0; }
+        </style>
+      </head>
+      <body>
+        <h2>CIERRE DE CAJA</h2>
+        <div class="line"><strong>Cajero:</strong> ${row.cajero || '-'}</div>
+        <div class="line"><strong>Turno:</strong> ${row.turno || '-'}</div>
+        <div class="line"><strong>Apertura:</strong> ${formatDate(row.aperturaAt)}</div>
+        <div class="line"><strong>Cierre:</strong> ${formatDate(row.cierreAt)}</div>
+        <hr />
+        <div class="line"><strong>Monto inicial:</strong> ${formatMoney(row.montoInicial)}</div>
+        <div class="line"><strong>Total Efectivo:</strong> ${formatMoney(row.totalEfectivo)}</div>
+        <div class="line"><strong>Total Tarjeta:</strong> ${formatMoney(row.totalTarjeta)}</div>
+        <div class="line"><strong>Total Transferencia:</strong> ${formatMoney(row.totalTransferencia)}</div>
+        <div class="line"><strong>Total OTRO:</strong> ${formatMoney(row.totalOtro)}</div>
+        <div class="line"><strong>Total Aplicativo:</strong> ${formatMoney(row.totalAplicativo)}</div>
+        <div class="line"><strong>Total contado:</strong> ${formatMoney(row.totalContado)}</div>
+        <div class="line"><strong>Diferencia:</strong> ${formatMoney(row.diferencia)}</div>
+        <div class="line"><strong>Motivo diferencia:</strong> ${row.motivoDiferencia || '-'}</div>
+        <hr />
+        <div class="line"><strong>${rangeVentas}</strong></div>
+      </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  win.print();
+  setTimeout(() => win.close(), 300);
 };
 
 onMounted(() => {
   loadSession();
   loadCajas();
+  loadHistorial();
   if (session.value) {
     cargarResumen();
   }

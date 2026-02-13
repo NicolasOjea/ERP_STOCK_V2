@@ -5,6 +5,7 @@ using Pos.Domain.Entities;
 using Pos.Domain.Enums;
 using Pos.Domain.Exceptions;
 using Pos.Infrastructure.Persistence;
+using System.Text.Json;
 
 namespace Pos.Infrastructure.Repositories;
 
@@ -84,14 +85,15 @@ public sealed class CajaRepository : ICajaRepository
         Guid sucursalId,
         Guid cajaId,
         decimal montoInicial,
+        string turno,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken = default)
     {
-        var session = new CajaSesion(Guid.NewGuid(), tenantId, cajaId, sucursalId, montoInicial, nowUtc, nowUtc);
+        var session = new CajaSesion(Guid.NewGuid(), tenantId, cajaId, sucursalId, montoInicial, turno, nowUtc, nowUtc);
         _dbContext.CajaSesiones.Add(session);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new CajaSesionDto(session.Id, session.CajaId, session.SucursalId, session.MontoInicial, session.AperturaAt, session.Estado.ToString().ToUpperInvariant());
+        return new CajaSesionDto(session.Id, session.CajaId, session.SucursalId, session.Turno, session.MontoInicial, session.AperturaAt, session.Estado.ToString().ToUpperInvariant());
     }
 
     public async Task<CajaMovimientoResultDto> AddMovimientoAsync(
@@ -176,6 +178,21 @@ public sealed class CajaRepository : ICajaRepository
         var totalEgresos = movimientos.Where(m => m.Monto < 0).Sum(m => -m.Monto);
         var saldoActual = session.MontoInicial + movimientos.Sum(m => m.Monto);
 
+        var teoricoPorMedio = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var mov in movimientos)
+        {
+            var key = string.IsNullOrWhiteSpace(mov.MedioPago) ? "EFECTIVO" : mov.MedioPago.Trim().ToUpperInvariant();
+            teoricoPorMedio[key] = (teoricoPorMedio.TryGetValue(key, out var current) ? current : 0m) + mov.Monto;
+        }
+
+        teoricoPorMedio["EFECTIVO"] = (teoricoPorMedio.TryGetValue("EFECTIVO", out var efectivo) ? efectivo : 0m) + session.MontoInicial;
+
+        var medios = teoricoPorMedio
+            .OrderBy(x => x.Key)
+            .Select(x => new CajaResumenMedioDto(x.Key, x.Value))
+            .ToList();
+
         return new CajaResumenDto(
             session.Id,
             session.CajaId,
@@ -183,7 +200,8 @@ public sealed class CajaRepository : ICajaRepository
             totalIngresos,
             totalEgresos,
             saldoActual,
-            movimientos.Count);
+            movimientos.Count,
+            medios);
     }
 
     public async Task<CajaSesionDto?> GetSesionAsync(
@@ -204,6 +222,7 @@ public sealed class CajaRepository : ICajaRepository
             session.Id,
             session.CajaId,
             session.SucursalId,
+            session.Turno,
             session.MontoInicial,
             session.AperturaAt,
             session.Estado.ToString().ToUpperInvariant());
@@ -309,5 +328,97 @@ public sealed class CajaRepository : ICajaRepository
             totalContado,
             diferenciaTotal,
             detalle);
+    }
+
+    public async Task<IReadOnlyList<CajaHistorialDto>> GetSesionesHistoricasAsync(
+        Guid tenantId,
+        Guid sucursalId,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var query = from s in _dbContext.CajaSesiones.AsNoTracking()
+                    join c in _dbContext.Cajas.AsNoTracking() on s.CajaId equals c.Id
+                    where s.TenantId == tenantId
+                        && s.SucursalId == sucursalId
+                        && s.Estado == CajaSesionEstado.Cerrada
+                    orderby s.CierreAt descending
+                    select new
+                    {
+                        Sesion = s,
+                        CajaNombre = c.Name
+                    };
+
+        if (fromUtc.HasValue)
+        {
+            query = query.Where(x =>
+                x.Sesion.AperturaAt >= fromUtc.Value
+                && (x.Sesion.CierreAt ?? x.Sesion.UpdatedAt) >= fromUtc.Value);
+        }
+        if (toUtc.HasValue)
+        {
+            query = query.Where(x =>
+                x.Sesion.AperturaAt <= toUtc.Value
+                && (x.Sesion.CierreAt ?? x.Sesion.UpdatedAt) <= toUtc.Value);
+        }
+
+        var rows = await query.ToListAsync(cancellationToken);
+        var result = new List<CajaHistorialDto>(rows.Count);
+
+        foreach (var row in rows)
+        {
+            var medios = ParseArqueo(row.Sesion.ArqueoJson);
+            decimal GetByMedio(string medio)
+                => medios.FirstOrDefault(m => string.Equals(m.Medio, medio, StringComparison.OrdinalIgnoreCase))?.Teorico ?? 0m;
+
+            var cierreAt = row.Sesion.CierreAt ?? row.Sesion.UpdatedAt;
+            var numerosVentas = await _dbContext.Ventas.AsNoTracking()
+                .Where(v => v.TenantId == tenantId
+                            && v.SucursalId == sucursalId
+                            && v.Estado == VentaEstado.Confirmada
+                            && v.UpdatedAt >= row.Sesion.AperturaAt
+                            && v.UpdatedAt <= cierreAt)
+                .Select(v => v.Numero)
+                .Where(n => n > 0)
+                .ToListAsync(cancellationToken);
+
+            result.Add(new CajaHistorialDto(
+                row.Sesion.Id,
+                row.Sesion.CajaId,
+                row.CajaNombre,
+                row.Sesion.Turno,
+                row.Sesion.AperturaAt,
+                row.Sesion.CierreAt,
+                row.Sesion.MontoInicial,
+                GetByMedio("EFECTIVO"),
+                GetByMedio("TARJETA"),
+                GetByMedio("TRANSFERENCIA"),
+                GetByMedio("OTRO"),
+                GetByMedio("APLICATIVO"),
+                row.Sesion.MontoCierre ?? 0m,
+                row.Sesion.DiferenciaTotal,
+                row.Sesion.MotivoDiferencia,
+                numerosVentas.Count > 0 ? numerosVentas.Min() : null,
+                numerosVentas.Count > 0 ? numerosVentas.Max() : null));
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyList<CajaCierreMedioResultDto> ParseArqueo(string? arqueoJson)
+    {
+        if (string.IsNullOrWhiteSpace(arqueoJson))
+        {
+            return Array.Empty<CajaCierreMedioResultDto>();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<CajaCierreMedioResultDto>>(arqueoJson) ?? new List<CajaCierreMedioResultDto>();
+        }
+        catch
+        {
+            return Array.Empty<CajaCierreMedioResultDto>();
+        }
     }
 }
