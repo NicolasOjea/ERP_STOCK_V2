@@ -7,6 +7,5 @@ RUN dotnet publish backend/src/Pos.WebApi/Pos.WebApi.csproj -c Release -o /app/p
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
-ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "Pos.WebApi.dll"]
+ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=${ASPNETCORE_URLS:-http://0.0.0.0:${PORT:-8080}} dotnet Pos.WebApi.dll"]
