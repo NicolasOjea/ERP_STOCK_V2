@@ -15,6 +15,22 @@ services:
           name: erp-stock-db
           property: connectionString
 
+  - type: web
+    name: erp-stock-front
+    runtime: static
+    plan: free
+    autoDeploy: true
+    rootDir: frontend/pos-ui
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://erp-stock-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
 databases:
   - name: erp-stock-db
     plan: free
