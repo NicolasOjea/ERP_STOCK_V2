@@ -72,7 +72,7 @@
         </v-col>
         <v-col cols="12" md="3">
           <v-card class="pos-card pa-4">
-            <div class="text-caption text-medium-emphasis">Total no facturado</div>
+            <div class="text-caption text-medium-emphasis">Total cotizado</div>
             <div v-if="loading" class="mt-2">
               <v-skeleton-loader type="text" />
             </div>
@@ -93,7 +93,7 @@
             <div v-if="loading" class="mt-3">
               <v-skeleton-loader type="image" height="180" />
             </div>
-            <div v-else class="chart-wrapper mt-3">
+            <div ref="ventasWrapperRef" v-else class="chart-wrapper mt-3">
               <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="chart-svg">
                 <polyline
                   :points="ventasLine"
@@ -103,22 +103,23 @@
                 />
                 <circle
                   v-for="(point, idx) in ventasPoints"
-                  :key="`hit-${idx}`"
-                  :cx="point.x"
-                  :cy="point.y"
-                  r="4"
-                  fill="transparent"
-                  @mouseenter="showVentasTooltip($event, idx)"
-                  @mousemove="moveVentasTooltip($event)"
-                  @mouseleave="hideVentasTooltip"
-                />
-                <circle
-                  v-for="(point, idx) in ventasPoints"
                   :key="`dot-${idx}`"
                   :cx="point.x"
                   :cy="point.y"
                   r="1.8"
                   fill="#0ea5a4"
+                />
+                <rect
+                  v-for="(area, idx) in ventasHitAreas"
+                  :key="`ventas-hit-${idx}`"
+                  :x="area.x"
+                  y="0"
+                  :width="area.width"
+                  height="35"
+                  fill="transparent"
+                  @mouseenter="showVentasTooltip($event, idx)"
+                  @mousemove="moveVentasTooltip($event)"
+                  @mouseleave="hideVentasTooltip"
                 />
               </svg>
               <div
@@ -145,8 +146,20 @@
             <div v-if="loading" class="mt-3">
               <v-skeleton-loader type="image" height="180" />
             </div>
-            <div v-else class="chart-wrapper mt-3">
+            <div ref="mediosWrapperRef" v-else class="chart-wrapper mt-3">
               <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="chart-svg">
+                <rect
+                  v-for="(hit, idx) in mediosHitAreas"
+                  :key="`medios-hit-${idx}`"
+                  :x="hit.x"
+                  y="0"
+                  :width="hit.width"
+                  height="35"
+                  fill="transparent"
+                  @mouseenter="showMediosTooltip($event, idx)"
+                  @mousemove="moveMediosTooltip($event)"
+                  @mouseleave="hideMediosTooltip"
+                />
                 <rect
                   v-for="(bar, idx) in mediosBars"
                   :key="idx"
@@ -156,9 +169,6 @@
                   :height="bar.height"
                   fill="#ea580c"
                   rx="1"
-                  @mouseenter="showMediosTooltip($event, idx)"
-                  @mousemove="moveMediosTooltip($event)"
-                  @mouseleave="hideMediosTooltip"
                 />
               </svg>
               <div
@@ -306,22 +316,35 @@ const getMediosTooltip = (idx) => {
 
 const ventasTooltipState = ref({ show: false, text: '', x: 0, y: 0 });
 const mediosTooltipState = ref({ show: false, text: '', x: 0, y: 0 });
+const ventasWrapperRef = ref(null);
+const mediosWrapperRef = ref(null);
+
+const tooltipPosition = (event, wrapperRef) => {
+  const rect = wrapperRef?.value?.getBoundingClientRect?.();
+  if (!rect) return { x: 12, y: 12 };
+  const tooltipWidth = 220;
+  const x = Math.max(8, Math.min(event.clientX - rect.left + 12, rect.width - tooltipWidth));
+  const y = Math.max(8, Math.min(event.clientY - rect.top - 10, rect.height - 28));
+  return { x, y };
+};
 
 const showVentasTooltip = (event, idx) => {
+  const pos = tooltipPosition(event, ventasWrapperRef);
   ventasTooltipState.value = {
     show: true,
     text: getVentasTooltip(idx),
-    x: event.offsetX + 12,
-    y: event.offsetY - 12
+    x: pos.x,
+    y: pos.y
   };
 };
 
 const moveVentasTooltip = (event) => {
   if (!ventasTooltipState.value.show) return;
+  const pos = tooltipPosition(event, ventasWrapperRef);
   ventasTooltipState.value = {
     ...ventasTooltipState.value,
-    x: event.offsetX + 12,
-    y: event.offsetY - 12
+    x: pos.x,
+    y: pos.y
   };
 };
 
@@ -330,20 +353,22 @@ const hideVentasTooltip = () => {
 };
 
 const showMediosTooltip = (event, idx) => {
+  const pos = tooltipPosition(event, mediosWrapperRef);
   mediosTooltipState.value = {
     show: true,
     text: getMediosTooltip(idx),
-    x: event.offsetX + 12,
-    y: event.offsetY - 12
+    x: pos.x,
+    y: pos.y
   };
 };
 
 const moveMediosTooltip = (event) => {
   if (!mediosTooltipState.value.show) return;
+  const pos = tooltipPosition(event, mediosWrapperRef);
   mediosTooltipState.value = {
     ...mediosTooltipState.value,
-    x: event.offsetX + 12,
-    y: event.offsetY - 12
+    x: pos.x,
+    y: pos.y
   };
 };
 
@@ -390,6 +415,15 @@ const buildLinePoints = (values) => {
 
 const ventasPoints = computed(() => buildLinePoints(ventasSeries.value));
 const ventasLine = computed(() => ventasPoints.value.map((point) => `${point.x},${point.y}`).join(' '));
+const ventasHitAreas = computed(() => {
+  const points = ventasPoints.value;
+  if (!points.length) return [];
+  const step = 100 / points.length;
+  return points.map((p) => ({
+    x: Math.max(0, p.x - step / 2),
+    width: step
+  }));
+});
 
 const mediosBars = computed(() => {
   const values = mediosSeries.value;
@@ -405,6 +439,16 @@ const mediosBars = computed(() => {
       height
     };
   });
+});
+
+const mediosHitAreas = computed(() => {
+  const len = mediosSeries.value.length;
+  if (!len) return [];
+  const step = 100 / len;
+  return Array.from({ length: len }, (_, i) => ({
+    x: i * step,
+    width: step
+  }));
 });
 
 const buildQuery = () => {

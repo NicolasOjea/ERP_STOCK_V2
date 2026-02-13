@@ -29,8 +29,8 @@
     <v-window v-model="tab">
       <v-window-item value="sesion">
         <v-row dense>
-      <v-col cols="12" md="6">
-        <v-card class="pos-card pa-4 mb-4">
+      <v-col cols="12" md="6" class="d-flex flex-column caja-left-column">
+        <v-card class="pos-card pa-4 mb-4 card-crear-caja">
           <div class="text-h6">Crear caja</div>
           <div class="text-caption text-medium-emphasis">Alta de caja por cajero</div>
           <v-divider class="my-3" />
@@ -64,7 +64,7 @@
           </v-form>
         </v-card>
 
-        <v-card class="pos-card pa-4 mb-4">
+        <v-card class="pos-card pa-4 mb-4 card-apertura">
           <div class="text-h6">Apertura</div>
           <div class="text-caption text-medium-emphasis">Iniciar sesion de caja</div>
           <v-divider class="my-3" />
@@ -126,8 +126,8 @@
           </div>
         </v-card>
 
-        <v-card class="pos-card pa-4">
-          <div class="text-h6">Movimientos</div>
+        <v-card class="pos-card pa-4 card-movimientos">
+          <div class="text-h6">Subir movimiento</div>
           <div class="text-caption text-medium-emphasis">Retiro, gasto o ajuste</div>
           <v-divider class="my-3" />
 
@@ -175,7 +175,7 @@
               :loading="movLoading"
               :disabled="!isAbierta"
             >
-              Registrar movimiento
+              Subir movimiento
             </v-btn>
           </v-form>
         </v-card>
@@ -852,6 +852,18 @@ onMounted(() => {
 
 .text-error {
   color: #dc2626;
+}
+
+.caja-left-column .card-apertura {
+  order: 1;
+}
+
+.caja-left-column .card-movimientos {
+  order: 2;
+}
+
+.caja-left-column .card-crear-caja {
+  order: 3;
 }
 
 @media print {
