@@ -38,5 +38,8 @@ export default defineConfig({
   ],
   server: {
     port: 5173
+  },
+  preview: {
+    allowedHosts: ['erpstockv2-production.up.railway.app']
   }
 });
